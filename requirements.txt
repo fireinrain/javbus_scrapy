@@ -1,0 +1,4 @@
+Scrapy~=2.6.1
+requests~=2.27.1
+python-dateutil~=2.8.2
+itemadapter~=0.6.0
