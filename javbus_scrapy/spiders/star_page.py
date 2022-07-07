@@ -130,7 +130,7 @@ class StarPageSpider(scrapy.Spider):
             # https://www.javbus.com/star/okq/6
             yield from self.fetch_star_info_item(response)
 
-        # yield from self.fetch_star_item_info(response)
+        yield from self.fetch_star_item_info(response)
 
         yield from self.fetch_next_page(response)
 
