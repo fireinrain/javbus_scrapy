@@ -1,3 +1,5 @@
+import os
+
 import scrapy
 import requests
 from .. import utils
@@ -34,9 +36,22 @@ class ActressesSpider(scrapy.Spider):
             self.log(f"当前获取到cookie_strs: {self.cookie_list}")
 
     def start_requests(self):
-        for url in self.start_urls:
-            yield scrapy.Request(url, self.parse,
-                                 headers=utils.make_actresses_header(url, self.base_url), cookies=self.cookies)
+        data_store_ = self.settings['DATA_STORE']
+        actress_file_dir = os.path.join(data_store_, utils.ACTRESSES_PATH_NAME)
+        if not os.path.exists(actress_file_dir):
+            os.makedirs(actress_file_dir)
+        if self.settings['CENSORED'] == "all":
+            for url in self.start_urls:
+                yield scrapy.Request(url, self.parse,
+                                     headers=utils.make_actresses_header(url, self.base_url), cookies=self.cookies)
+        elif self.settings['CENSORED'] == "censored":
+            yield scrapy.Request(self.start_urls[0], self.parse,
+                                 headers=utils.make_actresses_header(self.start_urls[0], self.base_url),
+                                 cookies=self.cookies)
+        elif self.settings['CENSORED'] == "uncensored":
+            yield scrapy.Request(self.start_urls[1], self.parse,
+                                 headers=utils.make_actresses_header(self.start_urls[1], self.base_url),
+                                 cookies=self.cookies)
 
     def parse(self, response):
         if response.status != 200:
@@ -64,7 +79,7 @@ class ActressesSpider(scrapy.Spider):
                 next_page = self.base_url + relative_next_page
                 pre_page_url = response.request.url
                 yield scrapy.Request(next_page, self.parse,
-                                     headers=utils.make_actresses_header(next_page, pre_page_url),cookies=self.cookies)
+                                     headers=utils.make_actresses_header(next_page, pre_page_url), cookies=self.cookies)
 
     @staticmethod
     def close(spider, reason):
