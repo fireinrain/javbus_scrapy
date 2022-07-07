@@ -97,3 +97,6 @@ class JavbusStarInfoScrapyItem(scrapy.Item):
     birthplace = scrapy.Field()
     # 爱好
     habbits = scrapy.Field()
+
+    def get_csv_str(self):
+        return f"{self['star_name']},{self['star_head_photo_url']},{self['all_item_counts']},{self['magnet_item_counts']},{self['censored_star']},{self['birthday']},{self['age']},{self['height']},{self['cup']},{self['chest_circumference']},{self['waistline']},{self['hip_circumference']},{self['birthplace']},{self['habbits']}\n"

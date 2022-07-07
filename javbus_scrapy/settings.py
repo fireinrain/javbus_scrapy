@@ -100,3 +100,5 @@ ITEM_PIPELINES = {
 
 # # 配置数据的保存目录
 DATA_STORE = './data_store'
+# 只爬取censored censored uncensored all
+CENSORED = 'censored'

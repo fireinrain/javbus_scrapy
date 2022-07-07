@@ -8,10 +8,15 @@
 @Software: PyCharm
 @Time    : 2022/7/7 4:31 AM
 """
+import re
+
 import requests
 from fake_useragent import UserAgent
 
 BASE_URL = "https://www.javbus.com"
+ACTRESSES_PATH_NAME = "actresses"
+STARINFO_PATH_NAME = "starinfo"
+STARITEMINFO_PATH_NAME = "stariteminfo"
 
 
 def make_default_header():
@@ -154,6 +159,36 @@ def parse_and_make_header(header_str):
     return fake_header
 
 
+def is_first_star_page_url(url: str) -> bool:
+    if "uncensored" in url:
+        replace = url.replace("https://www.javbus.com/uncensored/star/", "")
+        split = replace.split("/")
+        if len(split) == 1:
+            return True
+    else:
+        replace = url.replace("https://www.javbus.com/star/", "")
+        split = replace.split("/")
+        if len(split) == 1:
+            return True
+    return False
+
+
+def string_end_with_num(string):
+    """
+    判断字符串以数字结尾
+    :param string:
+    :type string:
+    :return:
+    :rtype:
+    """
+    # 以一个数字结尾字符串
+    text = re.compile(r".*[0-9]$")
+    if text.match(string):
+        return True
+    else:
+        return False
+
+
 def test_make_actresses_header():
     current_url = ""
     pre_page_url = ""
@@ -169,7 +204,21 @@ def test_fetch_page_with_cookie_all():
     print(response.text)
 
 
+def test_list_sort():
+    a = ["censored_xxx", "uncensored_xxxx"]
+    a.sort(key=lambda x: x.startswith("ce"), reverse=True)
+    print(a)
+
+
+def test_str_end_with_num():
+    a = "https://www.javbus.com/star/2m3"
+    print(string_end_with_num(a))
+
+
 if __name__ == '__main__':
-    test_make_actresses_header()
-    test_fetch_page_with_cookie_all()
+    # test_make_actresses_header()
+    # test_fetch_page_with_cookie_all()
+    test_list_sort()
+    test_str_end_with_num()
+
     pass

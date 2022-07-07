@@ -1,3 +1,5 @@
+import os
+
 import requests
 import scrapy
 
@@ -10,8 +12,12 @@ class StarPageSpider(scrapy.Spider):
     allowed_domains = ['javbus.com']
     base_url = "https://javbus.com"
     start_urls = ["https://www.javbus.com/star/okq", "https://www.javbus.com/uncensored/star/39p"]
+    # "https://www.javbus.com/uncensored/star/39p"
     cookie_list = []
     cookies = {}
+    actresses_file_exists = False
+
+    actresses_files = []
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -35,32 +41,181 @@ class StarPageSpider(scrapy.Spider):
             self.cookie_list.append(cookie_str)
             self.log(f"当前获取到cookie_strs: {self.cookie_list}")
 
+    # 获取最新的actresses file
+    @staticmethod
+    def get_latest_actress_file_tuple(files) -> [[], ]:
+        s = set()
+        result = []
+        for f in files:
+            f_split = f.split("_")
+            s.add(f_split[2])
+        for date_str in s:
+            pair = []
+            for f in files:
+                if date_str in f:
+                    pair.append(f)
+                    pair.sort(key=lambda x: x.startswith("censored"), reverse=True)
+            result.append(pair)
+        result.sort(key=lambda x: x[0].split("_")[2], reverse=True)
+        return result
+
     def start_requests(self):
-        for url in self.start_urls:
-            if "uncensored" not in url:
+        # 读取最新的actresses 目录
+        data_store_ = self.settings['DATA_STORE']
+        actress_file_dir = os.path.join(data_store_, utils.ACTRESSES_PATH_NAME)
+        if not os.path.exists(actress_file_dir):
+            self.actresses_file_exists = False
+        else:
+            listdir = os.listdir(actress_file_dir)
+            files = [i for i in listdir if listdir != ".DS_Store"]
+            file_tuple = self.get_latest_actress_file_tuple(files)
+            self.actresses_file_exists = True
+            self.actresses_files = file_tuple[0]
+        # print(data_store_)
+        # 用作测试
+        if len(self.start_urls) > 0 and (not self.actresses_file_exists):
+            for url in self.start_urls:
+                if "uncensored" not in url:
+                    # 从文件中读取
+                    yield scrapy.Request(url, self.parse,
+                                         headers=utils.make_star_page_header(url, self.base_url), cookies=self.cookies,
+                                         meta={"censored": True})
+                else:
+                    yield scrapy.Request(url, self.parse,
+                                         headers=utils.make_star_page_header(url, self.base_url), cookies=self.cookies,
+                                         meta={"censored": False})
+        # 读取文件
+        else:
+            if self.settings['CENSORED'] == "all":
+                for file in self.actresses_files:
+                    path_join = os.path.join(actress_file_dir, file)
+                    if file.startswith("censored"):
+                        yield from self.fetch_all_actress_file_url(path_join, True)
+                    elif file.startswith("uncensored"):
+                        yield from self.fetch_all_actress_file_url(path_join, False)
+
+            elif self.settings['CENSORED'] == "censored":
+                censored_actresses = self.actresses_files[0]
+                path_join = os.path.join(actress_file_dir, censored_actresses)
+                yield from self.fetch_all_actress_file_url(path_join, True)
+            elif self.settings['CENSORED'] == "uncensored":
+                uncensored_actresses = self.actresses_files[1]
+                path_join = os.path.join(actress_file_dir, uncensored_actresses)
+                yield from self.fetch_all_actress_file_url(path_join, False)
+
+    def fetch_all_actress_file_url(self, path_join, censored):
+        with open(path_join, "r") as file:
+            while True:
+                readline = file.readline()
+                if readline == "":
+                    break
+                readline_split = readline.split(",")
+                # star main page url
+                url = readline_split[1].strip()
                 yield scrapy.Request(url, self.parse,
-                                     headers=utils.make_star_page_header(url, self.base_url), cookies=self.cookies,
-                                     meta={"censored": True})
-            else:
-                yield scrapy.Request(url, self.parse,
-                                     headers=utils.make_star_page_header(url, self.base_url), cookies=self.cookies,
-                                     meta={"censored": False})
+                                     headers=utils.make_star_page_header(url, self.base_url),
+                                     cookies=self.cookies,
+                                     meta={"censored": censored})
 
     def parse(self, response):
+        url = response.request.url
         if response.status != 200:
-            self.log(f"无法访问当前页面: {response.request.url}")
+            self.log(f"无法访问当前页面: {url}")
             return
-        # 个人信息抽取
-        star_name = response.xpath('//*[@id="waterfall"]/div[1]/div/div[2]/span/text()').extract_first()
 
+        if utils.is_first_star_page_url(url):
+            # 只在访问第一页的时候 进行个人信息抽取
+            # 个人信息抽取
+            # https://www.javbus.com/uncensored/star/371/3
+            # https://www.javbus.com/star/okq/6
+            yield from self.fetch_star_info_item(response)
+
+        # yield from self.fetch_star_item_info(response)
+
+        yield from self.fetch_next_page(response)
+
+    # 获取star info item
+    @staticmethod
+    def fetch_star_info_item(response):
+        star_name = response.xpath('//*[@id="waterfall"]/div[1]/div/div[2]/span/text()').extract_first()
         star_info_item = JavbusStarInfoScrapyItem()
+        all_item_counts = response.xpath('//*[@id="resultshowall"]/text()').getall()
+        all_item_counts = "".join(all_item_counts).replace("全部影片", "").strip()
+        star_info_item['all_item_counts'] = all_item_counts
+        magnet_item_counts = response.xpath('//*[@id="resultshowmag"]/text()').getall()
+        magnet_item_counts = "".join(magnet_item_counts).replace("已有磁力", "").strip()
+        star_info_item['magnet_item_counts'] = magnet_item_counts
+        photo_info_nodes = response.xpath('//*[@id="waterfall"]/div[1]/div/div[2]/p')
+        # 先给定默认值
+        star_info_item['birthday'] = ''
+        star_info_item['age'] = ''
+        star_info_item['height'] = ''
+        star_info_item['cup'] = ''
+        star_info_item['chest_circumference'] = ''
+        star_info_item['waistline'] = ''
+        star_info_item['hip_circumference'] = ''
+        star_info_item['birthplace'] = ''
+        star_info_item['habbits'] = ''
+        if len(photo_info_nodes) > 0:
+            for item in photo_info_nodes:
+                line = item.xpath('./text()').get()
+                line_split = line.split(":")
+                key = line_split[0].strip()
+                value = line_split[1].strip()
+                if "生日" == key:
+                    star_info_item['birthday'] = value
+                    continue
+                if "年齡" == key:
+                    star_info_item['age'] = value
+                    continue
+                if "身高" == key:
+                    star_info_item['height'] = value
+                    continue
+                if "罩杯" == key:
+                    star_info_item['cup'] = value
+                    continue
+                if "胸圍" == key:
+                    star_info_item['chest_circumference'] = value
+                    continue
+                if "腰圍" == key:
+                    star_info_item['waistline'] = value
+                    continue
+                if "臀圍" == key:
+                    star_info_item['hip_circumference'] = value
+                    continue
+                if "出生地" == key:
+                    star_info_item['birthplace'] = value
+                    continue
+                if "愛好" == key:
+                    star_info_item['habbits'] = value
+                    continue
         star_info_item['star_name'] = star_name
         star_photo_url = response.xpath('//*[@id="waterfall"]/div[1]/div/div[1]/img/@src').extract_first()
         star_info_item['star_head_photo_url'] = star_photo_url
-        photo_info_node = response.xpath('//*[@id="waterfall"]/div[1]/div/div[2]')
-
+        if not response.meta['censored']:
+            star_info_item['censored_star'] = False
+        else:
+            star_info_item['censored_star'] = True
         yield star_info_item
 
+    # 获取下一页
+    def fetch_next_page(self, response):
+        # next page forward
+        next_page = response.xpath('//*[@id="next"]')
+        if next_page is not None:
+            relative_next_page = next_page.xpath('./@href').extract_first()
+            # 存在next page 才进行请求
+            if relative_next_page is not None:
+                next_page = self.base_url + relative_next_page
+                pre_page_url = response.request.url
+                yield scrapy.Request(next_page, self.parse,
+                                     headers=utils.make_star_page_header(next_page, pre_page_url), cookies=self.cookies,
+                                     meta=response.meta)
+
+    # 获取stariteminfo
+    @staticmethod
+    def fetch_star_item_info(response):
+        star_name = response.xpath('//*[@id="waterfall"]/div[1]/div/div[2]/span/text()').extract_first()
         # 是否是有码作品
         censored_star = True
         if not response.meta['censored']:
@@ -98,17 +253,4 @@ class StarPageSpider(scrapy.Spider):
             if subtitle is not None:
                 item['movie_has_subtitle'] = True
                 item['movie_subtitle_flag'] = subtitle.strip()
-
             yield item
-
-        # next page forward
-        next_page = response.xpath('//*[@id="next"]')
-        if next_page is not None:
-            relative_next_page = next_page.xpath('./@href').extract_first()
-            # 存在next page 才进行请求
-            if relative_next_page is not None:
-                next_page = self.base_url + relative_next_page
-                pre_page_url = response.request.url
-                yield scrapy.Request(next_page, self.parse,
-                                     headers=utils.make_star_page_header(next_page, pre_page_url), cookies=self.cookies,
-                                     meta=response.meta)

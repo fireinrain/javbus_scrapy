@@ -7,10 +7,7 @@
 # useful for handling different item types with a single interface
 import os
 import time
-
-from dateutil.utils import today
-from itemadapter import ItemAdapter
-from scrapy.utils import spider
+from javbus_scrapy import utils
 
 from javbus_scrapy.items import JavbusActressScrapyItem, JavbusStarInfoScrapyItem, JavbusStarItemInfoScrapyItem
 
@@ -51,7 +48,7 @@ class JavbusScrapyActressesPipeline:
     def __init__(self, spider) -> None:
         # 初始化存储目录
         store_path = spider.settings['DATA_STORE'].strip()
-        actresses_data_path = os.path.join(store_path, "actresses")
+        actresses_data_path = os.path.join(store_path, utils.ACTRESSES_PATH_NAME)
         if not os.path.exists(actresses_data_path):
             os.makedirs(actresses_data_path)
         # 判断文件是否下载过
@@ -149,7 +146,7 @@ class JavbusScrapyStarItemInfoPipeline:
     def __init__(self, spider) -> None:
         # 初始化存储目录
         store_path = spider.settings['DATA_STORE'].strip()
-        iteminfo_data_path = os.path.join(store_path, "stariteminfo")
+        iteminfo_data_path = os.path.join(store_path, utils.STARITEMINFO_PATH_NAME)
         if not os.path.exists(iteminfo_data_path):
             os.makedirs(iteminfo_data_path)
         # 判断文件是否下载过
@@ -201,7 +198,7 @@ class JavbusScrapyStarInfoPipeline:
     def __init__(self, spider) -> None:
         # 初始化存储目录
         store_path = spider.settings['DATA_STORE'].strip()
-        iteminfo_data_path = os.path.join(store_path, "starinfo")
+        iteminfo_data_path = os.path.join(store_path, utils.STARINFO_PATH_NAME)
         if not os.path.exists(iteminfo_data_path):
             os.makedirs(iteminfo_data_path)
         # 判断文件是否下载过
