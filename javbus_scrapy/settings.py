@@ -6,6 +6,7 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+from datetime import datetime
 
 BOT_NAME = 'javbus_scrapy'
 
@@ -102,3 +103,11 @@ ITEM_PIPELINES = {
 DATA_STORE = './data_store'
 # 只爬取censored censored uncensored all
 CENSORED = 'all'
+
+# 文件及路径，log目录需要先建好
+today = datetime.now()
+log_file_path = "./log/scrapy_{}_{}_{}.log".format(today.year, today.month, today.day)
+
+# 日志输出
+LOG_LEVEL = 'DEBUG'
+LOG_FILE = log_file_path

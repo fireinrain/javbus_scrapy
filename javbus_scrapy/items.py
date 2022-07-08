@@ -19,6 +19,8 @@ class JavbusActressScrapyItem(scrapy.Item):
     name = scrapy.Field()
     # 个人主页地址
     star_page_url = scrapy.Field()
+    # 最新的一部作品url
+    latest_movie_url = scrapy.Field()
     # 大头贴地址
     head_photo_url = scrapy.Field()
     # censored or uncensored
@@ -26,7 +28,8 @@ class JavbusActressScrapyItem(scrapy.Item):
     censored = scrapy.Field()
 
     def get_csv_str(self):
-        return f"{self['name']},{self['star_page_url']},{self['head_photo_url']},{self['censored']}\n"
+        return f"{self['name']},{self['star_page_url']},{self['head_photo_url']}," \
+               f"{self['censored']}\n"
 
 
 # 个人主页 作品缩略项
@@ -64,7 +67,10 @@ class JavbusStarItemInfoScrapyItem(scrapy.Item):
         self['movie_censored'] = True
 
     def get_csv_str(self):
-        return f"{self['star_name']},{self['movie_url']},{self['movie_cover_url']},{self['movie_title']},{self['movie_has_magnet']},{self['movie_resolutions']},{self['movie_has_subtitle']},{self['movie_subtitle_flag']},{self['movie_code']},{self['movie_publish_date']}\n"
+        return f"{self['star_name']},{self['movie_url']},{self['movie_cover_url']}," \
+               f"{self['movie_title']},{self['movie_has_magnet']},{self['movie_resolutions']}," \
+               f"{self['movie_has_subtitle']},{self['movie_subtitle_flag']},{self['movie_code']}," \
+               f"{self['movie_publish_date']}\n"
 
 
 # 演员个人信息
@@ -99,9 +105,74 @@ class JavbusStarInfoScrapyItem(scrapy.Item):
     habbits = scrapy.Field()
 
     def get_csv_str(self):
-        return f"{self['star_name']},{self['star_head_photo_url']},{self['all_item_counts']},{self['magnet_item_counts']},{self['censored_star']},{self['birthday']},{self['age']},{self['height']},{self['cup']},{self['chest_circumference']},{self['waistline']},{self['hip_circumference']},{self['birthplace']},{self['habbits']}\n"
+        return f"{self['star_name']},{self['star_head_photo_url']},{self['all_item_counts']}," \
+               f"{self['magnet_item_counts']},{self['censored_star']},{self['birthday']}," \
+               f"{self['age']},{self['height']},{self['cup']}," \
+               f"{self['chest_circumference']},{self['waistline']},{self['hip_circumference']}," \
+               f"{self['birthplace']},{self['habbits']}\n"
 
 
 # 作品详情
 class JavbusMovieDetailItem(scrapy.Item):
-    pass
+    # 作品名
+    movie_title = scrapy.Field()
+    # 是否为有码作品
+    movie_censored = scrapy.Field()
+    # 作品链接
+    movie_url = scrapy.Field()
+    # 封面缩略图
+    movie_cover_url = scrapy.Field()
+    # 番号
+    movie_code = scrapy.Field()
+    # 发行日期
+    movie_publish_date = scrapy.Field()
+    # 作品时长
+    movie_duration = scrapy.Field()
+    # 导演
+    movie_directors = scrapy.Field()
+    # 制作商
+    movie_maker = scrapy.Field()
+    # 发行商
+    movie_publisher = scrapy.Field()
+    # 系列
+    movie_series = scrapy.Field()
+    # 类别
+    movie_tags = scrapy.Field()
+    # 演员列表
+    movie_stars = scrapy.Field()
+    # 样品图链接
+    movie_sample_photo_urls = scrapy.Field()
+
+    def get_csv_str(self):
+        return f"{self['movie_title']},{self['movie_censored']},{self['movie_url']},{self['movie_cover_url']}," \
+               f"{self['movie_code']},{self['movie_publish_date']},{self['movie_duration']}," \
+               f"{self['movie_directors']},{self['movie_maker']},{self['movie_publisher']}," \
+               f"{self['movie_series']},{self['movie_tags']},{self['movie_stars']}," \
+               f"{self['movie_sample_photo_urls']}"
+
+
+# 磁力链接
+class JavbusMovieDetailTorrentItem(scrapy.Item):
+    # 番号
+    movie_code = scrapy.Field()
+    # 是否为有码作品
+    movie_censored = scrapy.Field()
+    # 作品链接
+    movie_url = scrapy.Field()
+    # 磁力名称
+    torrent_name = scrapy.Field()
+    # 高清标识
+    torrent_resolution = scrapy.Field()
+    # 字幕标识
+    torrent_subtitle = scrapy.Field()
+    # 档案大小
+    torrent_movie_size = scrapy.Field()
+    # 分享日期
+    torrent_share_date = scrapy.Field()
+    # 磁力地址
+    torrent_str = scrapy.Field()
+
+    def get_csv_str(self):
+        return f"{self['movie_code']},{self['movie_censored']},{self['movie_url']}," \
+               f"{self['torrent_name']},{self['torrent_resolution']},{self['torrent_subtitle']}," \
+               f"{self['torrent_movie_size']},{self['torrent_share_date']},{self['torrent_str']}"
