@@ -78,3 +78,12 @@ spider movie 爬取作品详情
 moviedetail csv 数据格式：作品名,是否为有码作品,作品链接,封面缩略图,番号,发行日期,作品时长,导演,制作商,发行商,系列,类别,演员列表,样品图链接
 
 torrentdetail csv 数据格式: 番号,是否为有码作品，作品链接，磁力字符串列表(格式:name/magnet_str/resolution/subtitle/file_size/share_date,多个磁力用|分隔)
+
+### 数据增量更新
+
+目前并没有实现数据增量更新的功能，初步的想法是，现将csv的数据 在数据库中建表 导入到数据库，然后以该日期的数据为一个节点，编写一个更新程序
+
+每天定时爬取首页的前3页 抽取数据 加入到 stariteminfo 表中，插入前先查询一下表中数据是否存在如果不存在 就插入 存在就跳过。
+
+插入时 先获取该star 在 数据库中查询时候是新人star 如果是 同时 获取starinfo 信息插入数据库，然后同步更新 stariteminfo 表 moviedetail表 和 torrentdetail表
+
