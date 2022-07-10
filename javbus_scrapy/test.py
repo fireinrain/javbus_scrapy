@@ -80,12 +80,36 @@ def test_libtorrent_files():
     print(file_name)
 
 
+def test_select_from_file():
+    from scrapy.selector import Selector
+    with open("../torrent_response.html", "r") as file:
+        readlines = file.readlines()
+
+        body = ''.join(readlines)
+        getall = Selector(text=body).xpath('//tr')
+        for item in getall:
+            torrent_line_nodes = item.xpath("//td")
+            name_node = torrent_line_nodes[0]
+
+            text__getall = name_node.xpath('.//a/text()').getall()
+
+            size_node = torrent_line_nodes[1]
+
+            file_size = size_node.xpath('./a/text()').get(default="")
+
+            share_date = torrent_line_nodes[2]
+
+            file_share_date = share_date.xpath('./a/text()').get(default="")
+            print()
+
+
 if __name__ == '__main__':
     # test_make_actresses_header()
     # test_fetch_page_with_cookie_all()
     # test_list_sort()
     # test_str_end_with_num()
     # test_multi_line_str_code()
-    test_magnet_to_torrent()
+    # test_magnet_to_torrent()
     # test_libtorrent_files()
+    test_select_from_file()
     pass

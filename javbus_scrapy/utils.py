@@ -10,6 +10,7 @@
 """
 import os
 import re
+import time
 
 import requests
 from fake_useragent import UserAgent
@@ -19,6 +20,7 @@ ACTRESSES_PATH_NAME = "actresses"
 STARINFO_PATH_NAME = "starinfo"
 STARITEMINFO_PATH_NAME = "stariteminfo"
 MOVIE_DETAIL_PATH_NAME = "moviedetail"
+TORRENT_DETAIL_PATH_NAME = "torrentdetail"
 
 
 def make_default_header():
@@ -125,6 +127,43 @@ def make_actresses_header(current_url, pre_page_url):
             upgrade-insecure-requests: 1
             user-agent: {UserAgent(verify_ssl=False).random}
             """
+    # cookie: {cookie}
+    fake_header = parse_and_make_header(header_str)
+    # print(fake_header)
+    return fake_header
+
+
+def make_movie_detail_header(current_url, pre_page_url):
+    """
+    movie 详情页请求头
+    :param current_url:
+    :type current_url:
+    :param pre_page_url:
+    :type pre_page_url:
+    :return:
+    :rtype:
+    """
+    header_str = f"""
+                :authority: www.javbus.com
+                :method: GET
+                :path: {current_url.replace(BASE_URL, "")}
+                :scheme: https
+                accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+                accept-encoding: gzip, deflate, br
+                accept-language: zh,en;q=0.9,zh-TW;q=0.8,zh-CN;q=0.7,ja;q=0.6
+                cache-control: no-cache
+                pragma: no-cache
+                referer: {pre_page_url}
+                sec-ch-ua: " Not A;Brand";v="99", "Chromium";v="102", "Google Chrome";v="102"
+                sec-ch-ua-mobile: ?0
+                sec-ch-ua-platform: "macOS"
+                sec-fetch-dest: document
+                sec-fetch-mode: navigate
+                sec-fetch-site: same-origin
+                sec-fetch-user: ?1
+                upgrade-insecure-requests: 1
+                user-agent: {UserAgent(verify_ssl=False).random}
+                """
     # cookie: {cookie}
     fake_header = parse_and_make_header(header_str)
     # print(fake_header)
@@ -244,9 +283,62 @@ def magnet_to_torrent_file(magnet_str, store_dir, file_name=None):
                     max_size = item.size
                     max_file_path = item.path
             # print(max_size, max_file_path)
-            # SSNI-388-C-SSNI-388-C.mp4-5GB
+            # SSNI-388-C-SSNI-388-C.mp4-5GB.torrent
             size_float = str(max_size % (1000 ** 3))[:2]
             new_file_name = max_file_path.replace("/", "-") + "-" + str(
                 max_size // (1000 ** 3)) + "." + size_float + "GB" + ".torrent"
             new_file_name = os.path.join(store_dir, new_file_name)
             os.rename(file_name, new_file_name)
+
+
+# 获取文件的日期字符串
+def gen_time_str_for_file():
+    strftime = time.strftime("%Y-%m-%d", time.localtime())
+    return strftime
+
+
+# 获取torrent 请求header
+def make_torrent_req_header(current_url, pre_page_url, base_torrent_url):
+    header_str = f"""
+                    :authority: www.javbus.com
+                    :method: GET
+                    :path: "/ajax/uncledatoolsbyajax.php"{current_url.replace(base_torrent_url, "")}
+                    :scheme: https
+                    accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+                    accept-encoding: gzip, deflate, br
+                    accept-language: zh,en;q=0.9,zh-TW;q=0.8,zh-CN;q=0.7,ja;q=0.6
+                    cache-control: no-cache
+                    pragma: no-cache
+                    referer: {pre_page_url}
+                    sec-ch-ua: " Not A;Brand";v="99", "Chromium";v="102", "Google Chrome";v="102"
+                    sec-ch-ua-mobile: ?0
+                    sec-ch-ua-platform: "macOS"
+                    sec-fetch-dest: document
+                    sec-fetch-mode: navigate
+                    sec-fetch-site: same-origin
+                    sec-fetch-user: ?1
+                    upgrade-insecure-requests: 1
+                    user-agent: {UserAgent(verify_ssl=False).random}
+                    """
+    # cookie: {cookie}
+    fake_header = parse_and_make_header(header_str)
+    # print(fake_header)
+    return fake_header
+
+
+def make_torrent_req_url(base_torrent_url: str, params: {}):
+    """
+    获取torrent秦秋url
+    :param base_torrent_url:
+    :type base_torrent_url:
+    :param params:
+    :type params:
+    :return:
+    :rtype:
+    """
+    param_list = []
+    for item in params.items():
+        strs = item[0] + "=" + item[1]
+        param_list.append(strs)
+    join = "&".join(param_list)
+    return base_torrent_url + "?" + join

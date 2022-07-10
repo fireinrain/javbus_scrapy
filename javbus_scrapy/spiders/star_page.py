@@ -67,7 +67,7 @@ class StarPageSpider(scrapy.Spider):
             self.actresses_file_exists = False
         else:
             listdir = os.listdir(actress_file_dir)
-            files = [i for i in listdir if listdir != ".DS_Store"]
+            files = [i for i in listdir if i != ".DS_Store"]
             file_tuple = self.get_latest_actress_file_tuple(files)
             self.actresses_file_exists = True
             self.actresses_files = file_tuple[0]

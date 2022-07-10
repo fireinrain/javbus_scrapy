@@ -6,10 +6,11 @@
 
 # useful for handling different item types with a single interface
 import os
-import time
-from javbus_scrapy import utils
 
-from javbus_scrapy.items import JavbusActressScrapyItem, JavbusStarInfoScrapyItem, JavbusStarItemInfoScrapyItem
+from javbus_scrapy import utils
+from javbus_scrapy.items import JavbusActressScrapyItem, JavbusStarInfoScrapyItem, JavbusStarItemInfoScrapyItem, \
+    JavbusMovieDetailItem, JavbusMovieDetailTorrentItem
+from javbus_scrapy.utils import gen_time_str_for_file
 
 
 class JavbusScrapyPipeline:
@@ -20,7 +21,7 @@ class JavbusScrapyPipeline:
 # 处理actresses item
 class JavbusScrapyActressesPipeline:
     # 日期字符串
-    process_item_data_str = time.strftime("%Y-%m-%d", time.localtime())
+    process_item_data_str = gen_time_str_for_file()
     # 有码文件名
     censored_star_file_name = f"censored_star_{process_item_data_str}.csv"
     # 无码文件名
@@ -127,7 +128,7 @@ class JavbusScrapyActressesPipeline:
 # 处理stariteminfo item
 class JavbusScrapyStarItemInfoPipeline:
     # 日期字符串
-    process_item_data_str = time.strftime("%Y-%m-%d", time.localtime())
+    process_item_data_str = gen_time_str_for_file()
     # 有码文件名
     censored_star_item_info_file_name = f"censored_staritem_{process_item_data_str}.csv"
     # 无码文件名
@@ -179,7 +180,7 @@ class JavbusScrapyStarItemInfoPipeline:
 # 处理starinfo item
 class JavbusScrapyStarInfoPipeline:
     # 日期字符串
-    process_item_data_str = time.strftime("%Y-%m-%d", time.localtime())
+    process_item_data_str = gen_time_str_for_file()
     # 有码文件名
     censored_star_info_file_name = f"censored_starinfo_{process_item_data_str}.csv"
     # 无码文件名
@@ -216,6 +217,105 @@ class JavbusScrapyStarInfoPipeline:
             return item
         # 处理
         is_censored = item['censored_star']
+        csv_str = item.get_csv_str()
+        if is_censored:
+            with open(self.censored_path, 'a+') as file:
+                # print(f"csv_str:{csv_str}")
+                file.write(csv_str)
+        else:
+            with open(self.uncensored_path, 'a+') as file:
+                file.write(csv_str)
+
+
+# 处理movie detail
+class JavbusScrapyMovieDetailsPipeline:
+    # 日期字符串
+    process_item_data_str = gen_time_str_for_file()
+    # 有码文件名
+    censored_movie_detail_file_name = f"censored_movie_detail_{process_item_data_str}.csv"
+    # 无码文件名
+    uncensored_movie_detail_file_name = f"uncensored_movie_detail_{process_item_data_str}.csv"
+    # 有码存储路径
+    censored_path = None
+    # 无码存储路径
+    uncensored_path = None
+
+    today_has_download = False
+
+    @classmethod
+    def from_crawler(cls, spider):
+        return cls(spider)
+
+    def __init__(self, spider) -> None:
+        # 初始化存储目录
+        store_path = spider.settings['DATA_STORE'].strip()
+        movie_detail_data_path = os.path.join(store_path, utils.MOVIE_DETAIL_PATH_NAME)
+        if not os.path.exists(movie_detail_data_path):
+            os.makedirs(movie_detail_data_path)
+        # 判断文件是否下载过
+        self.censored_path = os.path.join(movie_detail_data_path, self.censored_movie_detail_file_name)
+        self.uncensored_path = os.path.join(movie_detail_data_path, self.uncensored_movie_detail_file_name)
+        if os.path.exists(self.censored_path) and (self.process_item_data_str in self.censored_path) \
+                and os.path.exists(self.uncensored_path) and (self.process_item_data_str in self.uncensored_path):
+            self.today_has_download = True
+
+    def process_item(self, item, spider):
+        if not isinstance(item, JavbusMovieDetailItem):
+            return item
+        if self.today_has_download:
+            spider.log(f"当天下载文件已存在: {self.censored_path}|{self.uncensored_path}")
+            return item
+        # 处理
+        is_censored = item['movie_censored']
+        csv_str = item.get_csv_str()
+        if is_censored:
+            with open(self.censored_path, 'a+') as file:
+                # print(f"csv_str:{csv_str}")
+                file.write(csv_str)
+        else:
+            with open(self.uncensored_path, 'a+') as file:
+                file.write(csv_str)
+
+
+class JavbusScrapyMovieTorrentsPipeline:
+    # 日期字符串
+    process_item_data_str = gen_time_str_for_file()
+    # 有码文件名
+    censored_torrent_detail_file_name = f"censored_torrent_detail_{process_item_data_str}.csv"
+    # 无码文件名
+    uncensored_torrent_detail_file_name = f"uncensored_torrent_detail_{process_item_data_str}.csv"
+    # 有码存储路径
+    censored_path = None
+    # 无码存储路径
+    uncensored_path = None
+
+    today_has_download = False
+
+    @classmethod
+    def from_crawler(cls, spider):
+        return cls(spider)
+
+    def __init__(self, spider) -> None:
+        # 初始化存储目录
+        store_path = spider.settings['DATA_STORE'].strip()
+        torrent_detail_data_path = os.path.join(store_path, utils.TORRENT_DETAIL_PATH_NAME)
+        if not os.path.exists(torrent_detail_data_path):
+            os.makedirs(torrent_detail_data_path)
+        # 判断文件是否下载过
+        self.censored_path = os.path.join(torrent_detail_data_path, self.censored_torrent_detail_file_name)
+        self.uncensored_path = os.path.join(torrent_detail_data_path, self.uncensored_torrent_detail_file_name)
+        if os.path.exists(self.censored_path) and (self.process_item_data_str in self.censored_path) \
+                and os.path.exists(self.uncensored_path) and (self.process_item_data_str in self.uncensored_path):
+            self.today_has_download = True
+
+    def process_item(self, item, spider):
+        if not isinstance(item, JavbusMovieDetailTorrentItem):
+            return item
+        if self.today_has_download:
+            spider.log(f"当天下载文件已存在: {self.censored_path}|{self.uncensored_path}")
+            return item
+        # 处理
+        is_censored = item['movie_censored']
         csv_str = item.get_csv_str()
         if is_censored:
             with open(self.censored_path, 'a+') as file:
