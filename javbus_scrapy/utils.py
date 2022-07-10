@@ -8,6 +8,7 @@
 @Software: PyCharm
 @Time    : 2022/7/7 4:31 AM
 """
+import os
 import re
 
 import requests
@@ -17,6 +18,7 @@ BASE_URL = "https://www.javbus.com"
 ACTRESSES_PATH_NAME = "actresses"
 STARINFO_PATH_NAME = "starinfo"
 STARITEMINFO_PATH_NAME = "stariteminfo"
+MOVIE_DETAIL_PATH_NAME = "moviedetail"
 
 
 def make_default_header():
@@ -160,6 +162,13 @@ def parse_and_make_header(header_str):
 
 
 def is_first_star_page_url(url: str) -> bool:
+    """
+    判断是否是第一页
+    :param url:
+    :type url:
+    :return:
+    :rtype:
+    """
     if "uncensored" in url:
         replace = url.replace("https://www.javbus.com/uncensored/star/", "")
         split = replace.split("/")
@@ -189,17 +198,68 @@ def string_end_with_num(string):
         return False
 
 
+# 将磁力链接转化为torrent file
+def magnet_to_torrent_file(magnet_str, store_dir, file_name=None):
+    convert_site_url1 = "http://magnet2torrent.com/"
+    # convert_site_url2 = "https://btsow.com/convert/magnet"
+    user_agent = {"user-Agent": UserAgent(verify_ssl=False).random}
+    client_session = requests.Session()
+    _ = client_session.get(convert_site_url1, headers=user_agent
+                           )
+    # upload magnet url
+    # post url
+    upload_url = "http://magnet2torrent.com/upload/"
+    data = {"magnet": magnet_str}
+    response = client_session.post(upload_url, data=data, headers=user_agent)
+    if file_name is not None and file_name != "":
+        torrent_store_path = os.path.join(store_dir, file_name)
+        with open(torrent_store_path, "wb") as file:
+            file.write(response.content)
+    else:
+        # 解析响应流 并解析出torrent内的文件列表 找出最大的文件 然后获取它的文件名  作为
+        # torrent 的文件名
+        import libtorrent
+        import warnings
+
+        # some bug here   temp.name is 8 ???
+        # import tempfile
+        # file_name = None
+        # with tempfile.TemporaryFile(mode="w+b") as temp:
+        #     temp.write(response.content)
+        #     file_name = temp.name
+        #     print(temp.name)
+        file_name = os.path.join(store_dir, "temp.torrent")
+        with open(file_name, "wb") as file:
+            file.write(response.content)
+
+        info = libtorrent.torrent_info(file_name)
+        # 抑制DeprecationWarning提示
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            max_size = 0
+            max_file_path = ""
+            for item in info.files():
+                # print(f"{item.path}->{item.size}")
+                if item.size > max_size:
+                    max_size = item.size
+                    max_file_path = item.path
+            print(max_size, max_file_path)
+            # SSNI-388-C-SSNI-388-C.mp4-5GB
+            new_file_name = max_file_path.replace("/", "-") + "-" + str(max_size // (1000 ** 3)) + "GB" + ".torrent"
+            new_file_name = os.path.join(store_dir, new_file_name)
+            os.rename(file_name, new_file_name)
+
+
 def test_make_actresses_header():
     current_url = ""
     pre_page_url = ""
-    cookie = "ccc"
-    print(make_actresses_header(current_url, pre_page_url, cookie))
+    print(make_actresses_header(current_url, pre_page_url))
 
 
 def test_fetch_page_with_cookie_all():
     url = "https://www.javbus.com/star/okq"
     cookie_str = "PHPSESSID=hpf3qam0thtcll18d87peh2vk1; existmag=all"
-    response = requests.get("https://www.javbus.com/star/okq", headers=make_star_page_header(BASE_URL, url, cookie_str))
+    response = requests.get("https://www.javbus.com/star/okq", headers=make_star_page_header(BASE_URL, url))
     assert "OFJE-371" in response.text, "请求有问题"
     print(response.text)
 
@@ -215,10 +275,52 @@ def test_str_end_with_num():
     print(string_end_with_num(a))
 
 
+# 测试多行字符串换行
+def test_multi_line_str_code():
+    a = "xxxx"
+    b = "sdsds"
+    c = "sadsasiasds"
+    d = "isdaisdajsdasdasdasda"
+    e = "xxxsadalfsad"
+    f = "asdasdc"
+    strs = f"{a},{b}," \
+           f"{c},{d}," \
+           f"{e},{f}"
+    print(strs)
+
+
+def test_magnet_to_torrent():
+    mag = "magnet:?xt=urn:btih:6CD02EA593812AA0A68D58D7DC8D90AA9DB3A723&dn=SSNI-388-C"
+    magnet_to_torrent_file(mag, store_dir="../data_store")
+
+
+def test_libtorrent_files():
+    import libtorrent
+    import warnings
+    file_name = "./temp.torrent"
+    info = libtorrent.torrent_info(file_name)
+    # 抑制DeprecationWarning提示
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        max_size = 0
+        max_file_path = ""
+        for item in info.files():
+            print(f"{item.path}->{item.size}")
+            if item.size > max_size:
+                max_size = item.size
+                max_file_path = item.path
+        print(max_size, max_file_path)
+
+        file_name = max_file_path.replace("/", "-") + "-" + str(max_size // (1000 ** 3)) + "GB"
+    print(file_name)
+
+
 if __name__ == '__main__':
     # test_make_actresses_header()
     # test_fetch_page_with_cookie_all()
-    test_list_sort()
-    test_str_end_with_num()
-
+    # test_list_sort()
+    # test_str_end_with_num()
+    # test_multi_line_str_code()
+    test_magnet_to_torrent()
+    # test_libtorrent_files()
     pass
