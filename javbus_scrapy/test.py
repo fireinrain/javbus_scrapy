@@ -75,7 +75,8 @@ def test_libtorrent_files():
                 max_file_path = item.path
         print(max_size, max_file_path)
 
-        file_name = max_file_path.replace("/", "-") + "-" + str(max_size // (1000 ** 3)) + "GB"
+        file_name = max_file_path.replace("/", "-") + "-" + str(max_size // (1000 ** 3)) + "." + str(
+            max_size % (1000 ** 3)) + "GB"
     print(file_name)
 
 

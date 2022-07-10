@@ -243,11 +243,10 @@ def magnet_to_torrent_file(magnet_str, store_dir, file_name=None):
                 if item.size > max_size:
                     max_size = item.size
                     max_file_path = item.path
-            print(max_size, max_file_path)
+            # print(max_size, max_file_path)
             # SSNI-388-C-SSNI-388-C.mp4-5GB
-            new_file_name = max_file_path.replace("/", "-") + "-" + str(max_size // (1000 ** 3)) + "GB" + ".torrent"
+            size_float = str(max_size % (1000 ** 3))[:2]
+            new_file_name = max_file_path.replace("/", "-") + "-" + str(
+                max_size // (1000 ** 3)) + "." + size_float + "GB" + ".torrent"
             new_file_name = os.path.join(store_dir, new_file_name)
             os.rename(file_name, new_file_name)
-
-
-
