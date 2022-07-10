@@ -21,6 +21,8 @@ class JavbusActressScrapyItem(scrapy.Item):
     star_page_url = scrapy.Field()
     # 最新的一部作品url
     latest_movie_url = scrapy.Field()
+    # 最新作品简介
+    latest_movie_intro = scrapy.Field()
     # 大头贴地址
     head_photo_url = scrapy.Field()
     # censored or uncensored
@@ -28,8 +30,8 @@ class JavbusActressScrapyItem(scrapy.Item):
     censored = scrapy.Field()
 
     def get_csv_str(self):
-        return f"{self['name']},{self['star_page_url']},{self['head_photo_url']}," \
-               f"{self['censored']}\n"
+        return f"{self['name']},{self['star_page_url']},{self['latest_movie_url']}," \
+               f"{self['head_photo_url']},{self['latest_movie_intro']},{self['censored']}\n"
 
 
 # 个人主页 作品缩略项

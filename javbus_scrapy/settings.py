@@ -6,6 +6,7 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+import os
 from datetime import datetime
 
 BOT_NAME = 'javbus_scrapy'
@@ -25,7 +26,7 @@ ROBOTSTXT_OBEY = False
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-# DOWNLOAD_DELAY = 1
+DOWNLOAD_DELAY = 1
 # The download delay setting will honor only one of:
 # CONCURRENT_REQUESTS_PER_DOMAIN = 16
 # CONCURRENT_REQUESTS_PER_IP = 16
@@ -106,8 +107,11 @@ CENSORED = 'all'
 
 # 文件及路径，log目录需要先建好
 today = datetime.now()
-log_file_path = "./log/scrapy_{}_{}_{}.log".format(today.year, today.month, today.day)
+setting_dir = os.path.dirname(__file__)
+log_dir = os.path.dirname(setting_dir)
+log_dir = os.path.join(log_dir, "logs")
 
 # 日志输出
 LOG_LEVEL = 'DEBUG'
-LOG_FILE = log_file_path
+# 开启log file 日志输出就不回输出到控制台了
+# LOG_FILE = log_dir + "/" + "scrapy_{}_{}_{}.log".format(today.year, today.month, today.day)
