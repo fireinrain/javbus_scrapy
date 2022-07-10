@@ -105,7 +105,7 @@ ITEM_PIPELINES = {
 # # 配置数据的保存目录
 DATA_STORE = './data_store'
 # 只爬取censored censored uncensored all
-CENSORED = 'all'
+CENSORED = 'censored'
 
 # 文件及路径，log目录需要先建好
 today = datetime.now()

@@ -35,6 +35,31 @@ def process_request(self, request, spider):
 
 ```
 
+### 配置说明
+
+```python3
+# settings.py
+# # 配置数据的保存目录
+DATA_STORE = './data_store'
+# 只爬取censored censored uncensored all
+# 修改该值可以选择只爬取有码 或者无码 或者两者全部
+CENSORED = 'censored'
+
+# 文件及路径，log目录需要先建好
+today = datetime.now()
+setting_dir = os.path.dirname(__file__)
+log_dir = os.path.dirname(setting_dir)
+log_dir = os.path.join(log_dir, "logs")
+
+# 日志输出
+LOG_LEVEL = 'DEBUG'
+# 开启log file 日志输出就不回输出到控制台了
+# LOG_FILE = log_dir + "/" + "scrapy_{}_{}_{}.log".format(today.year, today.month, today.day)
+
+
+
+```
+
 ### 数据说明
 
 spider actresses:  爬取演员列表，并将有码和无码演员分类写入文本
