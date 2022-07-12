@@ -124,7 +124,7 @@ class ActressesSpider(scrapy.Spider):
     def parse(self, response):
         if response.status != 200:
             self.log(
-                f"无法访问当前页面: {response.request.url} \n response.status: {response.status} "
+                f"{self.__class__.__name__} 无法访问当前页面: {response.request.url} \n response.status: {response.status} "
                 f"\n当前客户端header: {response.request.headers} \n当前使用cookie:{response.request.cookies}")
             return
         # print(response.text)
@@ -174,7 +174,7 @@ class ActressesSpider(scrapy.Spider):
         actresses_['latest_movie_url'] = ""
         actresses_['latest_movie_intro'] = ""
         if response.status != 200:
-            self.log(f"无法访问当前页面: {response.request.url}")
+            self.log(f"{self.__class__.__name__} 无法访问当前页面: {response.request.url}")
             # 加入到暂时无法访问url列表 404 403
             # 404 不需要,403换新的cookie 重新爬取一次
             if response.status == 403:
@@ -190,15 +190,15 @@ class ActressesSpider(scrapy.Spider):
             combine_str = "|".join([film_code, film_date, file_name])
             actresses_['latest_movie_url'] = film_url
             actresses_['latest_movie_intro'] = combine_str
-        self.log(f"爬取到------------------------------{actresses_}")
+        self.log(f"{self.__class__.__name__} 爬取到------------------------------{actresses_}")
 
         yield actresses_
 
     # 补全出现404 或者是403 没法访问的url 通过检测
     # 排除404 的url 对403的连接 采取新的cookie来访问
     def spider_idle(self, spider):
-        self.log("scrpay is going to be idle......")
-        self.log("准备进行补爬......")
+        self.log(f"{self.__class__.__name__} scrpay is going to be idle......")
+        self.log(f"{self.__class__.__name__} 准备进行补爬......")
         if len(self.interrupt_bad_url) < 0:
             return
         result = utils.patch_new_cookie_for_403(self.interrupt_bad_url.keys())
@@ -210,12 +210,12 @@ class ActressesSpider(scrapy.Spider):
         cookies = result[1]
 
         for i in urls:
-            self.log(f"正在进行补爬,url: {i}")
+            self.log(f"{self.__class__.__name__} 正在进行补爬,url: {i}")
             req = Request(i,
                           callback=self.parse_for_latest_movie,
                           headers=utils.make_star_page_header(i, self.base_url),
                           cookies=cookies, meta={"actresses": self.interrupt_bad_url[i]},
-                          errback=lambda: self.log(f"补爬{i}出现错误!!!"), dont_filter=True)
+                          errback=lambda: self.log(f"{self.__class__.__name__} 补爬{i}出现错误!!!"), dont_filter=True)
             self.crawler.engine.crawl(req)
             # 及时移除已经patch的url 否则会进入无限循环
             self.interrupt_bad_url.pop(i)

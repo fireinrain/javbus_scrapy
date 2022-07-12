@@ -1,45 +1,76 @@
 import os
+import re
 
 import requests
 import scrapy
+from scrapy import signals, Request
+from scrapy.exceptions import DontCloseSpider
 
 from javbus_scrapy import utils
 from javbus_scrapy.items import JavbusStarItemInfoScrapyItem, JavbusStarInfoScrapyItem
 
 
+# 每一个star 页 默认的每一页作品数量为30
 class StarPageSpider(scrapy.Spider):
     name = 'star_page'
     allowed_domains = ['javbus.com']
-    base_url = "https://javbus.com"
+    base_url = "https://www.javbus.com"
     start_urls = ["https://www.javbus.com/star/okq", "https://www.javbus.com/uncensored/star/39p"]
+    # start_urls = ["https://www.javbus.com/uncensored/star/3cj"]
     # "https://www.javbus.com/uncensored/star/39p"
     cookie_list = []
     cookies = {}
     actresses_file_exists = False
 
+    handle_httpstatus_list = [404, 403]
+
     actresses_files = []
 
-    def __init__(self, **kwargs):
+    # key is url,value is None
+    interrupt_bad_url = {}
+
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        # 插入settings
+        settings = crawler.settings
+        spider = cls(crawler, settings, **kwargs)
+        # 使用信号 在scrapy 触发特定时间 主动调用注册的方法
+        # https://docs.scrapy.org/en/latest/topics/signals.html
+        crawler.signals.connect(spider.spider_idle, signal=signals.spider_idle)
+        return spider
+
+    def __init__(self, crawler, settings, **kwargs):
         super().__init__(**kwargs)
+        self.settings = settings
+        self.crawler = crawler
+
         if not self.cookie_list:
             # 如果cookie列表不存在 那么就先请求cookie
             # 先去访问javbus.com 主页
-            response = requests.get(self.base_url)
-            items = response.cookies.items()
-            result = []
-            for item in items:
-                key = item[0]
-                # 默认获取所有作品
-                if key == "existmag":
-                    value = "all"
-                else:
-                    value = item[1]
-                key_value = key + "=" + value
-                result.append(key_value)
-                self.cookies.update({key: value})
-            cookie_str = "; ".join(result)
-            self.cookie_list.append(cookie_str)
-            self.log(f"当前获取到cookie_strs: {self.cookie_list}")
+            if not self.cookie_list:
+                # 如果cookie列表不存在 那么就先请求cookie
+                # 先去访问javbus.com 主页
+                session = requests.Session()
+                session.proxies = self.settings['REQUESTS_PROXIES']
+                response = session.get(self.base_url)
+                items = response.cookies.items()
+                result = []
+                for item in items:
+                    key = item[0]
+                    # 默认获取所有作品
+                    if key == "existmag":
+                        value = "all"
+                    else:
+                        value = item[1]
+                    key_value = key + "=" + value
+                    result.append(key_value)
+                    self.cookies.update({key: value})
+                # 访问详情页需要加上该cookie项
+                self.cookies.update(
+                    {"starinfo": "glyphicon%20glyphicon-plus", "genreinfo": "glyphicon%20glyphicon-minus"})
+                cookie_str = "; ".join(result)
+                self.cookie_list.append(cookie_str)
+                self.log(f"{self.__class__.__name__} 当前获取到cookie_strs: {self.cookie_list}")
 
     # 获取最新的actresses file
     @staticmethod
@@ -62,7 +93,7 @@ class StarPageSpider(scrapy.Spider):
     def start_requests(self):
         # 读取最新的actresses 目录
         data_store_ = self.settings['DATA_STORE']
-        actress_file_dir = os.path.join(data_store_, utils.ACTRESSES_PATH_NAME)
+        actress_file_dir = os.path.join(data_store_, self.settings['ACTRESSES_PATH_NAME'])
         if not os.path.exists(actress_file_dir):
             self.actresses_file_exists = False
         else:
@@ -79,11 +110,11 @@ class StarPageSpider(scrapy.Spider):
                     # 从文件中读取
                     yield scrapy.Request(url, self.parse,
                                          headers=utils.make_star_page_header(url, self.base_url), cookies=self.cookies,
-                                         meta={"censored": True})
+                                         meta={"censored": True}, dont_filter=True)
                 else:
                     yield scrapy.Request(url, self.parse,
                                          headers=utils.make_star_page_header(url, self.base_url), cookies=self.cookies,
-                                         meta={"censored": False})
+                                         meta={"censored": False}, dont_filter=True)
         # 读取文件
         else:
             if self.settings['CENSORED'] == "all":
@@ -112,15 +143,22 @@ class StarPageSpider(scrapy.Spider):
                 readline_split = readline.split(",")
                 # star main page url
                 url = readline_split[1].strip()
+                # 检查url是否合法
+                valid_url = utils.check_a_str_is_valid_url(url)
+                if not valid_url:
+                    self.log(f"{self.__class__.__name__} 当前url:{url} 不合法,已跳过")
+                    continue
                 yield scrapy.Request(url, self.parse,
                                      headers=utils.make_star_page_header(url, self.base_url),
                                      cookies=self.cookies,
-                                     meta={"censored": censored})
+                                     meta={"censored": censored}, dont_filter=True)
 
     def parse(self, response):
         url = response.request.url
         if response.status != 200:
             self.log(f"无法访问当前页面: {url}")
+            if response.status == 403:
+                self.interrupt_bad_url[url] = None
             return
 
         if utils.is_first_star_page_url(url):
@@ -135,8 +173,7 @@ class StarPageSpider(scrapy.Spider):
         yield from self.fetch_next_page(response)
 
     # 获取star info item
-    @staticmethod
-    def fetch_star_info_item(response):
+    def fetch_star_info_item(self, response):
         star_name = response.xpath('//*[@id="waterfall"]/div[1]/div/div[2]/span/text()').extract_first()
         star_info_item = JavbusStarInfoScrapyItem()
         all_item_counts = response.xpath('//*[@id="resultshowall"]/text()').getall()
@@ -213,8 +250,7 @@ class StarPageSpider(scrapy.Spider):
                                      meta=response.meta)
 
     # 获取stariteminfo
-    @staticmethod
-    def fetch_star_item_info(response):
+    def fetch_star_item_info(self, response):
         star_name = response.xpath('//*[@id="waterfall"]/div[1]/div/div[2]/span/text()').extract_first()
         # 是否是有码作品
         censored_star = True
@@ -239,18 +275,79 @@ class StarPageSpider(scrapy.Spider):
             item['movie_title'] = movie_title.strip()
             # 作品番号
             movie_code = item_node.xpath('./div[2]/span/date[1]/text()').extract_first()
+            findall = None
+            if movie_code is None:
+                self.log(f"在star page: {response.request.url} 页面无法抽取movie_code:{movie_url}的番号,尝试使用正则抽取")
+                text = item_node.get()
+                findall = re.findall(r'<date>(.*?)</date>', text)
+                movie_code = findall[0]
+
             item['movie_code'] = movie_code.strip()
             # 发布日期
             movie_publish_date = item_node.xpath('./div[2]/span/date[2]/text()').extract_first()
+            if movie_publish_date is None:
+                self.log(f"在star page: {response.request.url} 页面无法抽取movie_publish_date:{movie_url}的番号,尝试使用正则抽取")
+                movie_publish_date = findall[1]
+
             item['movie_publish_date'] = movie_publish_date.strip()
             # 高清标识
             resolution = item_node.xpath('./div[2]/span/div/button[1]/text()').extract_first()
+            if resolution is None:
+                self.log(f"在star page: {response.request.url} 页面无法抽取resolution:{movie_url}的番号,尝试使用正则抽取")
+                text = item_node.get()
+                findall = re.findall(r'新種', text)
+                if len(findall) > 0:
+                    resolution = "高清"
             if resolution is not None:
                 item['movie_has_magnet'] = True
                 item['movie_resolutions'] = resolution.strip()
             # 字幕
             subtitle = item_node.xpath('./div[2]/span/div/button[2]/text()').extract_first()
+            if subtitle is None:
+                self.log(f"在star page: {response.request.url} 页面无法抽取subtitle:{movie_url}的番号,尝试使用正则抽取")
+                text = item_node.get()
+                findall = re.findall(r'字幕', text)
+                if len(findall) > 0:
+                    subtitle = "字幕"
             if subtitle is not None:
                 item['movie_has_subtitle'] = True
                 item['movie_subtitle_flag'] = subtitle.strip()
             yield item
+
+        # 补全出现404 或者是403 没法访问的url 通过检测
+        # 排除404 的url 对403的连接 采取新的cookie来访问
+
+    def spider_idle(self, spider):
+        self.log(f"{self.__class__.__name__} scrpay is going to be idle......")
+        self.log(f"{self.__class__.__name__} 准备进行补爬......")
+        if len(self.interrupt_bad_url) < 0:
+            return
+        result = utils.patch_new_cookie_for_403(self.interrupt_bad_url.keys())
+        if result is None:
+            return
+        urls = result[0]
+        if len(urls) <= 0:
+            return
+        cookies = result[1]
+
+        for i in urls:
+            self.log(f"{self.__class__.__name__} 正在进行补爬,url: {i}")
+            censored = True
+            if "uncensored" in i:
+                censored = False
+            req = Request(i,
+                          callback=self.parse,
+                          headers=utils.make_star_page_header(i, self.base_url),
+                          cookies=cookies, meta={"censored": censored},
+                          errback=lambda: self.log(f"{self.__class__.__name__} 补爬{i}出现错误!!!"), dont_filter=True)
+            self.crawler.engine.crawl(req)
+            # 及时移除已经patch的url 否则会进入无限循环
+            self.interrupt_bad_url.pop(i)
+            # 修改scrapy的统计
+            self.crawler.stats.inc_value(f'downloader/response_status_count/403', spider=self, count=-1)
+
+        raise DontCloseSpider(Exception("waiting for patch crawl......"))
+
+    @staticmethod
+    def close(spider, reason):
+        return super().close(spider, reason)

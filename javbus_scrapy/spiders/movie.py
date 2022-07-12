@@ -2,6 +2,8 @@ import os
 
 import requests
 import scrapy
+from scrapy import signals, Request
+from scrapy.exceptions import DontCloseSpider
 
 from javbus_scrapy import utils
 from javbus_scrapy.items import JavbusMovieDetailItem, JavbusMovieDetailTorrentItem
@@ -10,7 +12,7 @@ from javbus_scrapy.items import JavbusMovieDetailItem, JavbusMovieDetailTorrentI
 class MovieSpider(scrapy.Spider):
     name = 'movie'
     allowed_domains = ['javbus.com']
-    base_url = "https://javbus.com"
+    base_url = "https://www.javbus.com"
     torrent_fetch_url = "https://www.javbus.com/ajax/uncledatoolsbyajax.php"
 
     # start_urls = ['https://www.javbus.com/SSNI-388']
@@ -23,12 +25,32 @@ class MovieSpider(scrapy.Spider):
 
     staritem_info_files = []
 
-    def __init__(self, **kwargs):
+    handle_httpstatus_list = [404, 403]
+
+    # key is url,value is actresses_
+    interrupt_bad_url = {}
+
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        # 插入settings
+        settings = crawler.settings
+        spider = cls(crawler, settings, **kwargs)
+        # 使用信号 在scrapy 触发特定时间 主动调用注册的方法
+        # https://docs.scrapy.org/en/latest/topics/signals.html
+        crawler.signals.connect(spider.spider_idle, signal=signals.spider_idle)
+        return spider
+
+    def __init__(self, crawler, settings, **kwargs):
         super().__init__(**kwargs)
+        self.settings = settings
+        self.crawler = crawler
+
         if not self.cookie_list:
             # 如果cookie列表不存在 那么就先请求cookie
             # 先去访问javbus.com 主页
-            response = requests.get(self.base_url)
+            session = requests.Session()
+            session.proxies = self.settings['REQUESTS_PROXIES']
+            response = session.get(self.base_url)
             items = response.cookies.items()
             result = []
             for item in items:
@@ -42,10 +64,10 @@ class MovieSpider(scrapy.Spider):
                 result.append(key_value)
                 self.cookies.update({key: value})
             # 访问详情页需要加上该cookie项
-            self.cookies.update({"starinfo": "glyphicon%20glyphicon-plus", "genreinfo": "glyphicon%20glyphicon-plus"})
+            self.cookies.update({"starinfo": "glyphicon%20glyphicon-plus", "genreinfo": "glyphicon%20glyphicon-minus"})
             cookie_str = "; ".join(result)
             self.cookie_list.append(cookie_str)
-            self.log(f"当前获取到cookie_strs: {self.cookie_list}")
+            self.log(f"{self.__class__.__name__} 当前获取到cookie_strs: {self.cookie_list}")
 
     @staticmethod
     def get_latest_stariteminfo_file_tuple(files) -> [[], ]:
@@ -67,7 +89,7 @@ class MovieSpider(scrapy.Spider):
     def start_requests(self):
         # 读取最新的actresses 目录
         data_store_ = self.settings['DATA_STORE']
-        star_item_info_dir = os.path.join(data_store_, utils.STARITEMINFO_PATH_NAME)
+        star_item_info_dir = os.path.join(data_store_, self.settings['STARITEMINFO_PATH_NAME'])
         if not os.path.exists(star_item_info_dir):
             self.staritem_info_file_exists = False
         else:
@@ -124,7 +146,9 @@ class MovieSpider(scrapy.Spider):
     def parse(self, response):
         url = response.request.url
         if response.status != 200:
-            self.log(f"无法访问当前页面: {url}")
+            self.log(f"{self.__class__.__name__} 无法访问当前页面: {url}")
+            if response.status == 403:
+                self.interrupt_bad_url[url] = response.meta['censored']
             return
 
         movie_detail_item = JavbusMovieDetailItem()
@@ -134,7 +158,7 @@ class MovieSpider(scrapy.Spider):
         if 'censored' in response.meta.keys():
             movie_detail_item['movie_censored'] = response.meta['censored']
         else:
-            movie_detail_item['movie_censored'] = ""
+            movie_detail_item['movie_censored'] = True
         movie_detail_item['movie_url'] = url
 
         movie_detail_item['movie_cover_url'] = response.xpath('/html/body/div[5]/div[1]/div[1]/a/img/@src').get(
@@ -221,6 +245,7 @@ class MovieSpider(scrapy.Spider):
         gid = torrent_req_params[0].strip().replace("var gid = ", "")
         uc = torrent_req_params[1].strip().replace("var uc = ", "")
         img = torrent_req_params[2].strip().replace("var img = ", "")
+        # make "'xxxx'" to 'xxxx'
         img = eval(img)
         req_url = utils.make_torrent_req_url(self.torrent_fetch_url, {"gid": gid, "lang": "zh", "uc": uc, "img": img})
         yield scrapy.Request(req_url, self.parse_torrent_response,
@@ -233,7 +258,7 @@ class MovieSpider(scrapy.Spider):
         url = response.request.url
         movie_detail_item = response.meta['movie_detail_item']
         if response.status != 200:
-            self.log(f"无法获取当前请求的torrent列表: {url}")
+            self.log(f"{self.__class__.__name__} 无法获取当前请求的torrent列表: {url}")
             return
 
         torrent_item = JavbusMovieDetailTorrentItem()
@@ -294,3 +319,37 @@ class MovieSpider(scrapy.Spider):
         torrent_item['torrent_list_str'] = all_torrent_line
 
         yield torrent_item
+
+    # 补全出现404 或者是403 没法访问的url 通过检测
+    # 排除404 的url 对403的连接 采取新的cookie来访问
+    def spider_idle(self, spider):
+        self.log(f"{self.__class__.__name__} scrpay is going to be idle......")
+        self.log(f"{self.__class__.__name__} 准备进行补爬......")
+        if len(self.interrupt_bad_url) < 0:
+            return
+        result = utils.patch_new_cookie_for_403(self.interrupt_bad_url.keys())
+        if result is None:
+            return
+        urls = result[0]
+        if len(urls) <= 0:
+            return
+        cookies = result[1]
+
+        for i in urls:
+            self.log(f"{self.__class__.__name__} 正在进行补爬,url: {i}")
+            req = Request(i,
+                          callback=self.parse,
+                          headers=utils.make_movie_detail_header(i, self.base_url),
+                          cookies=cookies, meta={"censored": self.interrupt_bad_url[i]},
+                          errback=lambda: self.log(f"{self.__class__.__name__} 补爬{i}出现错误!!!"), dont_filter=True)
+            self.crawler.engine.crawl(req)
+            # 及时移除已经patch的url 否则会进入无限循环
+            self.interrupt_bad_url.pop(i)
+            # 修改scrapy的统计
+            self.crawler.stats.inc_value(f'downloader/response_status_count/403', spider=self, count=-1)
+
+        raise DontCloseSpider(Exception("waiting for patch crawl......"))
+
+    @staticmethod
+    def close(spider, reason):
+        return super().close(spider, reason)

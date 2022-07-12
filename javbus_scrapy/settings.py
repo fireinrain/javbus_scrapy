@@ -131,5 +131,5 @@ log_dir = os.path.join(log_dir, "logs")
 LOG_LEVEL = 'DEBUG'
 
 # 开启log file 日志输出就不回输出到控制台了
-# LOG_FILE = log_dir + "/" + "scrapy_{}_{}_{}:{}:{}:{}.log".format(today.year, today.month, today.day, today.hour,
-#                                                                  today.minute, today.second)
+LOG_FILE = log_dir + "/" + "scrapy_{}_{}_{}:{}:{}:{}.log".format(today.year, today.month, today.day, today.hour,
+                                                                 today.minute, today.second)
