@@ -5,8 +5,10 @@
 
 from scrapy import signals
 
+from javbus_scrapy.settings import REQUESTS_PROXIES
+
+
 # useful for handling different item types with a single interface
-from itemadapter import is_item, ItemAdapter
 
 
 class JavbusScrapySpiderMiddleware:
@@ -79,10 +81,10 @@ class JavbusScrapyDownloaderMiddleware:
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
         # set a proxy for request data
-        proxy_url = "http://127.0.0.1:7892"
+        proxy_url = REQUESTS_PROXIES["http"]
         request.meta["proxy"] = proxy_url
         spider.logger.info(f"正在使用本地代理: {proxy_url}")
-        return None
+        pass
 
     def process_response(self, request, response, spider):
         # Called with the response returned from the downloader.

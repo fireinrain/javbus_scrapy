@@ -15,16 +15,7 @@ import time
 import requests
 from fake_useragent import UserAgent
 
-BASE_URL = "https://www.javbus.com"
-ACTRESSES_PATH_NAME = "actresses"
-STARINFO_PATH_NAME = "starinfo"
-STARITEMINFO_PATH_NAME = "stariteminfo"
-MOVIE_DETAIL_PATH_NAME = "moviedetail"
-TORRENT_DETAIL_PATH_NAME = "torrentdetail"
-requests_proxies = {
-    'http': 'http://127.0.0.1:7892',
-    'https': 'http://127.0.0.1:7892',
-}
+from javbus_scrapy.settings import DOMAIN_BASE_URL, REQUESTS_PROXIES
 
 
 def make_default_header():
@@ -74,7 +65,7 @@ def make_star_page_header(current_url, pre_page_url):
     header_str = f"""
                 :authority: www.javbus.com
                 :method: GET
-                :path: {current_url.replace(BASE_URL, "")}
+                :path: {current_url.replace(DOMAIN_BASE_URL, "")}
                 :scheme: https
                 accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
                 accept-encoding: gzip, deflate, br
@@ -113,7 +104,7 @@ def make_actresses_header(current_url, pre_page_url):
     header_str = f"""
             :authority: www.javbus.com
             :method: GET
-            :path: {current_url.replace(BASE_URL, "")}
+            :path: {current_url.replace(DOMAIN_BASE_URL, "")}
             :scheme: https
             accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
             accept-encoding: gzip, deflate, br
@@ -150,7 +141,7 @@ def make_movie_detail_header(current_url, pre_page_url):
     header_str = f"""
                 :authority: www.javbus.com
                 :method: GET
-                :path: {current_url.replace(BASE_URL, "")}
+                :path: {current_url.replace(DOMAIN_BASE_URL, "")}
                 :scheme: https
                 accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
                 accept-encoding: gzip, deflate, br
@@ -395,8 +386,8 @@ def patch_new_cookie_for_403(urls) -> []:
         return None
     user_agent = {"user-Agent": UserAgent(verify_ssl=False).random}
     client_session = requests.Session()
-    client_session.proxies = requests_proxies
-    _ = client_session.get(BASE_URL, headers=user_agent
+    client_session.proxies = REQUESTS_PROXIES
+    _ = client_session.get(DOMAIN_BASE_URL, headers=user_agent
                            )
     cookies = {}
     items = client_session.cookies.items()
@@ -426,5 +417,6 @@ def patch_new_cookie_for_403(urls) -> []:
     return r
 
 
+# 比较两个文件的不同
 def compare_diff_two_files():
     pass

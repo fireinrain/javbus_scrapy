@@ -34,15 +34,20 @@ class ActressesSpider(scrapy.Spider):
 
     @classmethod
     def from_crawler(cls, crawler, *args, **kwargs):
-        spider = super(ActressesSpider, cls).from_crawler(crawler, *args, **kwargs)
+        # 插入settings
+        settings = crawler.settings
+        spider = cls(crawler, settings, **kwargs)
         # 使用信号 在scrapy 触发特定时间 主动调用注册的方法
         # https://docs.scrapy.org/en/latest/topics/signals.html
         crawler.signals.connect(spider.spider_idle, signal=signals.spider_idle)
         return spider
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, crawler, settings, **kwargs):
         # 初始化url
+        super().__init__(**kwargs)
+        self.settings = settings
+        self.crawler = crawler
+
         if self.start_urls is None and self.pre_link_mode:
             self.start_urls = [[self.censored_index_url + "/" + str(i) for i in range(1, 914)],
                                [self.uncensored_index_url + "/" + str(i) for i in range(1, 438)]]
@@ -53,7 +58,7 @@ class ActressesSpider(scrapy.Spider):
             # 如果cookie列表不存在 那么就先请求cookie
             # 先去访问javbus.com 主页
             session = requests.Session()
-            session.proxies = utils.requests_proxies
+            session.proxies = self.settings['REQUESTS_PROXIES']
             response = session.get(self.base_url)
             items = response.cookies.items()
             result = []
@@ -75,7 +80,7 @@ class ActressesSpider(scrapy.Spider):
 
     def start_requests(self):
         data_store_ = self.settings['DATA_STORE']
-        actress_file_dir = os.path.join(data_store_, utils.ACTRESSES_PATH_NAME)
+        actress_file_dir = os.path.join(data_store_, self.settings['ACTRESSES_PATH_NAME'])
         if not os.path.exists(actress_file_dir):
             os.makedirs(actress_file_dir)
         if self.settings['CENSORED'] == "all":

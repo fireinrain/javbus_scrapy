@@ -21,7 +21,7 @@ def test_make_actresses_header():
 def test_fetch_page_with_cookie_all():
     url = "https://www.javbus.com/star/okq"
     cookie_str = "PHPSESSID=hpf3qam0thtcll18d87peh2vk1; existmag=all"
-    response = requests.get("https://www.javbus.com/star/okq", headers=make_star_page_header(BASE_URL, url))
+    response = requests.get("https://www.javbus.com/star/okq", headers=make_star_page_header(DOMAIN_BASE_URL, url))
     assert "OFJE-371" in response.text, "请求有问题"
     print(response.text)
 
@@ -98,7 +98,7 @@ def test_select_from_file():
             share_date = torrent_line_nodes[2]
 
             file_share_date = share_date.xpath('./a/text()').get(default="")
-            print()
+            print(share_date)
 
 
 def test_re_extract_html_content():
@@ -157,143 +157,143 @@ def test_pre_gen_url():
 def test_check_page_is_404():
     strs = """
     https://www.javbus.com/star/vkl
-https://www.javbus.com/star/q9k
-https://www.javbus.com/star/v1e
-https://www.javbus.com/star/v50
-https://www.javbus.com/star/swx
-https://www.javbus.com/star/p6u
-https://www.javbus.com/star/742
-https://www.javbus.com/star/90p
-https://www.javbus.com/star/sqv
-https://www.javbus.com/star/2at
-https://www.javbus.com/star/eac
-https://www.javbus.com/star/6au
-https://www.javbus.com/star/8p
-https://www.javbus.com/star/3cf
-https://www.javbus.com/star/f43
-https://www.javbus.com/star/3f6
-https://www.javbus.com/star/4pb
-https://www.javbus.com/star/340
-https://www.javbus.com/star/n4y
-https://www.javbus.com/star/uq
-https://www.javbus.com/star/xhj
-https://www.javbus.com/star/ps5
-https://www.javbus.com/star/cqg
-https://www.javbus.com/star/9de
-https://www.javbus.com/star/xwk
-https://www.javbus.com/star/w1v
-https://www.javbus.com/star/whm
-https://www.javbus.com/star/uoj
-https://www.javbus.com/star/pvd
-https://www.javbus.com/star/7mv
-https://www.javbus.com/star/2ah
-https://www.javbus.com/star/w86
-https://www.javbus.com/star/vrt
-https://www.javbus.com/star/wwx
-https://www.javbus.com/star/ref
-https://www.javbus.com/star/q81
-https://www.javbus.com/star/qu0
-https://www.javbus.com/star/a12
-https://www.javbus.com/star/6g0
-https://www.javbus.com/star/711
-https://www.javbus.com/star/p6h
-https://www.javbus.com/star/8b1
-https://www.javbus.com/star/6iv
-https://www.javbus.com/star/uua
-https://www.javbus.com/star/u1g
-https://www.javbus.com/star/e6x
-https://www.javbus.com/star/3bd
-https://www.javbus.com/star/6iq
-https://www.javbus.com/star/jya
-https://www.javbus.com/star/4jq
-https://www.javbus.com/star/6it
-https://www.javbus.com/star/op6
-https://www.javbus.com/star/ysc
-https://www.javbus.com/star/ysb
-https://www.javbus.com/star/ysa
-https://www.javbus.com/star/lcx
-https://www.javbus.com/star/ysg
-https://www.javbus.com/star/ysf
-https://www.javbus.com/star/yse
-https://www.javbus.com/star/ysd
-https://www.javbus.com/star/obr
-https://www.javbus.com/star/ysl
-https://www.javbus.com/star/4ys
-https://www.javbus.com/star/ysi
-https://www.javbus.com/star/obw
-https://www.javbus.com/star/obv
-https://www.javbus.com/star/obu
-https://www.javbus.com/star/obt
-https://www.javbus.com/star/obs
-https://www.javbus.com/star/bhl
-https://www.javbus.com/star/oc0
-https://www.javbus.com/star/obz
-https://www.javbus.com/star/gmn
-https://www.javbus.com/star/ege
-https://www.javbus.com/star/obx
-https://www.javbus.com/star/xm9
-https://www.javbus.com/star/oc2
-https://www.javbus.com/star/oc1
-https://www.javbus.com/star/1fh
-https://www.javbus.com/star/j7d
-https://www.javbus.com/star/v28
-https://www.javbus.com/star/f27
-https://www.javbus.com/star/o5k
-https://www.javbus.com/star/o5m
-https://www.javbus.com/star/o5l
-https://www.javbus.com/star/o5j
-https://www.javbus.com/star/z10
-https://www.javbus.com/star/z11
-https://www.javbus.com/star/yfk
-https://www.javbus.com/star/xuj
-https://www.javbus.com/star/p5u
-https://www.javbus.com/star/ig2
-https://www.javbus.com/star/nzd
-https://www.javbus.com/star/p67
-https://www.javbus.com/star/p66
-https://www.javbus.com/star/nlj
-https://www.javbus.com/star/nli
-https://www.javbus.com/star/8l8
-https://www.javbus.com/star/w3i
-https://www.javbus.com/star/3gf
-https://www.javbus.com/star/pz8
-https://www.javbus.com/star/pdu
-https://www.javbus.com/star/d5c
-https://www.javbus.com/star/a6t
-https://www.javbus.com/star/iok
-https://www.javbus.com/star/yos
-https://www.javbus.com/star/9zw
-https://www.javbus.com/star/fc2
-https://www.javbus.com/star/lni
-https://www.javbus.com/star/sdl
-https://www.javbus.com/star/kh4
-https://www.javbus.com/star/ywh
-https://www.javbus.com/star/at0
-https://www.javbus.com/star/alw
-https://www.javbus.com/star/4w5
-https://www.javbus.com/star/s75
-https://www.javbus.com/star/atn
-https://www.javbus.com/star/blz
-https://www.javbus.com/star/xc5
-https://www.javbus.com/star/tlg
-https://www.javbus.com/star/p8z
-https://www.javbus.com/star/gk3
-https://www.javbus.com/star/cls
-https://www.javbus.com/star/v6k
-https://www.javbus.com/star/li3
-https://www.javbus.com/star/cm3
-https://www.javbus.com/star/b89
-https://www.javbus.com/star/tsp
-https://www.javbus.com/star/e75
-https://www.javbus.com/star/kio
-https://www.javbus.com/star/noo
-https://www.javbus.com/star/gdq
-https://www.javbus.com/star/naj
-https://www.javbus.com/star/bu3
-https://www.javbus.com/star/yka
-https://www.javbus.com/star/em1
-https://www.javbus.com/star/hkm
-https://www.javbus.com/star/p2z
+    https://www.javbus.com/star/q9k
+    https://www.javbus.com/star/v1e
+    https://www.javbus.com/star/v50
+    https://www.javbus.com/star/swx
+    https://www.javbus.com/star/p6u
+    https://www.javbus.com/star/742
+    https://www.javbus.com/star/90p
+    https://www.javbus.com/star/sqv
+    https://www.javbus.com/star/2at
+    https://www.javbus.com/star/eac
+    https://www.javbus.com/star/6au
+    https://www.javbus.com/star/8p
+    https://www.javbus.com/star/3cf
+    https://www.javbus.com/star/f43
+    https://www.javbus.com/star/3f6
+    https://www.javbus.com/star/4pb
+    https://www.javbus.com/star/340
+    https://www.javbus.com/star/n4y
+    https://www.javbus.com/star/uq
+    https://www.javbus.com/star/xhj
+    https://www.javbus.com/star/ps5
+    https://www.javbus.com/star/cqg
+    https://www.javbus.com/star/9de
+    https://www.javbus.com/star/xwk
+    https://www.javbus.com/star/w1v
+    https://www.javbus.com/star/whm
+    https://www.javbus.com/star/uoj
+    https://www.javbus.com/star/pvd
+    https://www.javbus.com/star/7mv
+    https://www.javbus.com/star/2ah
+    https://www.javbus.com/star/w86
+    https://www.javbus.com/star/vrt
+    https://www.javbus.com/star/wwx
+    https://www.javbus.com/star/ref
+    https://www.javbus.com/star/q81
+    https://www.javbus.com/star/qu0
+    https://www.javbus.com/star/a12
+    https://www.javbus.com/star/6g0
+    https://www.javbus.com/star/711
+    https://www.javbus.com/star/p6h
+    https://www.javbus.com/star/8b1
+    https://www.javbus.com/star/6iv
+    https://www.javbus.com/star/uua
+    https://www.javbus.com/star/u1g
+    https://www.javbus.com/star/e6x
+    https://www.javbus.com/star/3bd
+    https://www.javbus.com/star/6iq
+    https://www.javbus.com/star/jya
+    https://www.javbus.com/star/4jq
+    https://www.javbus.com/star/6it
+    https://www.javbus.com/star/op6
+    https://www.javbus.com/star/ysc
+    https://www.javbus.com/star/ysb
+    https://www.javbus.com/star/ysa
+    https://www.javbus.com/star/lcx
+    https://www.javbus.com/star/ysg
+    https://www.javbus.com/star/ysf
+    https://www.javbus.com/star/yse
+    https://www.javbus.com/star/ysd
+    https://www.javbus.com/star/obr
+    https://www.javbus.com/star/ysl
+    https://www.javbus.com/star/4ys
+    https://www.javbus.com/star/ysi
+    https://www.javbus.com/star/obw
+    https://www.javbus.com/star/obv
+    https://www.javbus.com/star/obu
+    https://www.javbus.com/star/obt
+    https://www.javbus.com/star/obs
+    https://www.javbus.com/star/bhl
+    https://www.javbus.com/star/oc0
+    https://www.javbus.com/star/obz
+    https://www.javbus.com/star/gmn
+    https://www.javbus.com/star/ege
+    https://www.javbus.com/star/obx
+    https://www.javbus.com/star/xm9
+    https://www.javbus.com/star/oc2
+    https://www.javbus.com/star/oc1
+    https://www.javbus.com/star/1fh
+    https://www.javbus.com/star/j7d
+    https://www.javbus.com/star/v28
+    https://www.javbus.com/star/f27
+    https://www.javbus.com/star/o5k
+    https://www.javbus.com/star/o5m
+    https://www.javbus.com/star/o5l
+    https://www.javbus.com/star/o5j
+    https://www.javbus.com/star/z10
+    https://www.javbus.com/star/z11
+    https://www.javbus.com/star/yfk
+    https://www.javbus.com/star/xuj
+    https://www.javbus.com/star/p5u
+    https://www.javbus.com/star/ig2
+    https://www.javbus.com/star/nzd
+    https://www.javbus.com/star/p67
+    https://www.javbus.com/star/p66
+    https://www.javbus.com/star/nlj
+    https://www.javbus.com/star/nli
+    https://www.javbus.com/star/8l8
+    https://www.javbus.com/star/w3i
+    https://www.javbus.com/star/3gf
+    https://www.javbus.com/star/pz8
+    https://www.javbus.com/star/pdu
+    https://www.javbus.com/star/d5c
+    https://www.javbus.com/star/a6t
+    https://www.javbus.com/star/iok
+    https://www.javbus.com/star/yos
+    https://www.javbus.com/star/9zw
+    https://www.javbus.com/star/fc2
+    https://www.javbus.com/star/lni
+    https://www.javbus.com/star/sdl
+    https://www.javbus.com/star/kh4
+    https://www.javbus.com/star/ywh
+    https://www.javbus.com/star/at0
+    https://www.javbus.com/star/alw
+    https://www.javbus.com/star/4w5
+    https://www.javbus.com/star/s75
+    https://www.javbus.com/star/atn
+    https://www.javbus.com/star/blz
+    https://www.javbus.com/star/xc5
+    https://www.javbus.com/star/tlg
+    https://www.javbus.com/star/p8z
+    https://www.javbus.com/star/gk3
+    https://www.javbus.com/star/cls
+    https://www.javbus.com/star/v6k
+    https://www.javbus.com/star/li3
+    https://www.javbus.com/star/cm3
+    https://www.javbus.com/star/b89
+    https://www.javbus.com/star/tsp
+    https://www.javbus.com/star/e75
+    https://www.javbus.com/star/kio
+    https://www.javbus.com/star/noo
+    https://www.javbus.com/star/gdq
+    https://www.javbus.com/star/naj
+    https://www.javbus.com/star/bu3
+    https://www.javbus.com/star/yka
+    https://www.javbus.com/star/em1
+    https://www.javbus.com/star/hkm
+    https://www.javbus.com/star/p2z
     """
     split = strs.strip().split("\n")
 

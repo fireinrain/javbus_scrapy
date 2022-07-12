@@ -107,7 +107,18 @@ ITEM_PIPELINES = {
 # # 配置数据的保存目录
 DATA_STORE = './data_store'
 # 只爬取censored censored uncensored all
-CENSORED = 'censored'
+CENSORED = 'uncensored'
+
+DOMAIN_BASE_URL = "https://www.javbus.com"
+ACTRESSES_PATH_NAME = "actresses"
+STARINFO_PATH_NAME = "starinfo"
+STARITEMINFO_PATH_NAME = "stariteminfo"
+MOVIE_DETAIL_PATH_NAME = "moviedetail"
+TORRENT_DETAIL_PATH_NAME = "torrentdetail"
+REQUESTS_PROXIES = {
+    'http': 'http://127.0.0.1:7892',
+    'https': 'http://127.0.0.1:7892',
+}
 
 # 文件及路径，log目录需要先建好
 today = datetime.now()
@@ -120,5 +131,5 @@ log_dir = os.path.join(log_dir, "logs")
 LOG_LEVEL = 'DEBUG'
 
 # 开启log file 日志输出就不回输出到控制台了
-LOG_FILE = log_dir + "/" + "scrapy_{}_{}_{}:{}:{}:{}.log".format(today.year, today.month, today.day, today.hour,
-                                                                 today.minute, today.second)
+# LOG_FILE = log_dir + "/" + "scrapy_{}_{}_{}:{}:{}:{}.log".format(today.year, today.month, today.day, today.hour,
+#                                                                  today.minute, today.second)

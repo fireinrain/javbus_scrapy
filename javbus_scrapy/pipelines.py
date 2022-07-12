@@ -49,7 +49,7 @@ class JavbusScrapyActressesPipeline:
     def __init__(self, spider) -> None:
         # 初始化存储目录
         store_path = spider.settings['DATA_STORE'].strip()
-        actresses_data_path = os.path.join(store_path, utils.ACTRESSES_PATH_NAME)
+        actresses_data_path = os.path.join(store_path, spider.settings['ACTRESSES_PATH_NAME'])
         if not os.path.exists(actresses_data_path):
             os.makedirs(actresses_data_path)
         # 判断文件是否下载过
@@ -148,7 +148,7 @@ class JavbusScrapyStarItemInfoPipeline:
     def __init__(self, spider) -> None:
         # 初始化存储目录
         store_path = spider.settings['DATA_STORE'].strip()
-        iteminfo_data_path = os.path.join(store_path, utils.STARITEMINFO_PATH_NAME)
+        iteminfo_data_path = os.path.join(store_path, spider.settings['STARITEMINFO_PATH_NAME'])
         if not os.path.exists(iteminfo_data_path):
             os.makedirs(iteminfo_data_path)
         # 判断文件是否下载过
@@ -201,7 +201,7 @@ class JavbusScrapyStarInfoPipeline:
     def __init__(self, spider) -> None:
         # 初始化存储目录
         store_path = spider.settings['DATA_STORE'].strip()
-        iteminfo_data_path = os.path.join(store_path, utils.STARINFO_PATH_NAME)
+        iteminfo_data_path = os.path.join(store_path, spider.settings['STARINFO_PATH_NAME'])
         if not os.path.exists(iteminfo_data_path):
             os.makedirs(iteminfo_data_path)
         # 判断文件是否下载过
@@ -252,7 +252,7 @@ class JavbusScrapyMovieDetailsPipeline:
     def __init__(self, spider) -> None:
         # 初始化存储目录
         store_path = spider.settings['DATA_STORE'].strip()
-        movie_detail_data_path = os.path.join(store_path, utils.MOVIE_DETAIL_PATH_NAME)
+        movie_detail_data_path = os.path.join(store_path, spider.settings['MOVIE_DETAIL_PATH_NAME'])
         if not os.path.exists(movie_detail_data_path):
             os.makedirs(movie_detail_data_path)
         # 判断文件是否下载过
@@ -302,7 +302,7 @@ class JavbusScrapyMovieTorrentsPipeline:
     def __init__(self, spider) -> None:
         # 初始化存储目录
         store_path = spider.settings['DATA_STORE'].strip()
-        torrent_detail_data_path = os.path.join(store_path, utils.TORRENT_DETAIL_PATH_NAME)
+        torrent_detail_data_path = os.path.join(store_path, spider.settings['TORRENT_DETAIL_PATH_NAME'])
         if not os.path.exists(torrent_detail_data_path):
             os.makedirs(torrent_detail_data_path)
         # 判断文件是否下载过
