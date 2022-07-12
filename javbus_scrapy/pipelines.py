@@ -116,6 +116,7 @@ class JavbusScrapyActressesPipeline:
             return item
 
         csv_str = item.get_csv_str()
+        csv_str = utils.process_str_with_no_rn(csv_str)
         if item['censored']:
             with open(self.censored_path, 'a+') as file:
                 # print(f"csv_str:{csv_str}")
@@ -168,6 +169,7 @@ class JavbusScrapyStarItemInfoPipeline:
 
         is_censored = item['movie_censored']
         csv_str = item.get_csv_str()
+        csv_str = utils.process_str_with_no_rn(csv_str)
         if is_censored:
             with open(self.censored_path, 'a+') as file:
                 # print(f"csv_str:{csv_str}")
@@ -218,6 +220,7 @@ class JavbusScrapyStarInfoPipeline:
         # 处理
         is_censored = item['censored_star']
         csv_str = item.get_csv_str()
+        csv_str = utils.process_str_with_no_rn(csv_str)
         if is_censored:
             with open(self.censored_path, 'a+') as file:
                 # print(f"csv_str:{csv_str}")
@@ -268,6 +271,7 @@ class JavbusScrapyMovieDetailsPipeline:
         # 处理
         is_censored = item['movie_censored']
         csv_str = item.get_csv_str()
+        csv_str = utils.process_str_with_no_rn(csv_str)
         if is_censored:
             with open(self.censored_path, 'a+') as file:
                 # print(f"csv_str:{csv_str}")
@@ -317,6 +321,7 @@ class JavbusScrapyMovieTorrentsPipeline:
         # 处理
         is_censored = item['movie_censored']
         csv_str = item.get_csv_str()
+        csv_str = utils.process_str_with_no_rn(csv_str)
         if is_censored:
             with open(self.censored_path, 'a+') as file:
                 # print(f"csv_str:{csv_str}")

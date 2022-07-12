@@ -21,6 +21,10 @@ STARINFO_PATH_NAME = "starinfo"
 STARITEMINFO_PATH_NAME = "stariteminfo"
 MOVIE_DETAIL_PATH_NAME = "moviedetail"
 TORRENT_DETAIL_PATH_NAME = "torrentdetail"
+requests_proxies = {
+    'http': 'http://127.0.0.1:7892',
+    'https': 'http://127.0.0.1:7892',
+}
 
 
 def make_default_header():
@@ -342,3 +346,85 @@ def make_torrent_req_url(base_torrent_url: str, params: {}):
         param_list.append(strs)
     join = "&".join(param_list)
     return base_torrent_url + "?" + join
+
+
+# 检查一个字符串是否是合法的url
+def check_a_str_is_valid_url(url: str) -> bool:
+    import validators
+    return validators.url(url)
+
+
+# 检查写入的文件是否存在不合格的数据
+def pre_check_str_is_a_valid_url(cvs_file_path):
+    url_not_valid = []
+    index = 1
+    with open(cvs_file_path, "r") as file:
+        while True:
+            readline = file.readline()
+            if readline == "":
+                break
+            split = readline.split(",")
+            # print(readline)
+            url = split[1]
+            valid_url = check_a_str_is_valid_url(url)
+            if not valid_url:
+                url_not_valid.append((index, readline))
+            index += 1
+    print(f"invalid url counts: {url_not_valid}......")
+    print(f"invalid urls: {url_not_valid}......")
+
+
+# 处理item字符串
+# 将所有\r\n 和\n 去除掉
+def process_str_with_no_rn(csv_str):
+    return csv_str.replace("\r\n", "").replace("\r", "").replace("\n", "").strip() + "\n"
+
+
+# 检查页面是否是400
+# 1573
+def patch_new_cookie_for_403(urls) -> []:
+    """
+    检查页面是否是400 返回可用的url 和cookie
+    :param urls:
+    :type urls:
+    :return:
+    :rtype:
+    """
+    print("正在检测补爬url......")
+    if len(urls) < 0:
+        return None
+    user_agent = {"user-Agent": UserAgent(verify_ssl=False).random}
+    client_session = requests.Session()
+    client_session.proxies = requests_proxies
+    _ = client_session.get(BASE_URL, headers=user_agent
+                           )
+    cookies = {}
+    items = client_session.cookies.items()
+    result = []
+    for item in items:
+        key = item[0]
+        # 默认获取所有作品
+        if key == "existmag":
+            value = "all"
+        else:
+            value = item[1]
+        key_value = key + "=" + value
+        result.append(key_value)
+        cookies.update({key: value})
+    # 访问详情页需要加上该cookie项
+    cookies.update({"starinfo": "glyphicon%20glyphicon-plus", "genreinfo": "glyphicon%20glyphicon-minus"})
+    result = []
+    r = []
+    for url in urls:
+        response = client_session.get(url)
+        if response.status_code == 200:
+            print(f"url:{url} is 403(available) page.......")
+            print(f"url: {url} is patch ok......")
+            result.append(url)
+    r.append(result)
+    r.append(cookies)
+    return r
+
+
+def compare_diff_two_files():
+    pass
