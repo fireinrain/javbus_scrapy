@@ -14,7 +14,27 @@ from javbus_scrapy.utils import gen_time_str_for_file
 
 
 class JavbusScrapyPipeline:
+    today_has_download = False
+
+    @classmethod
+    def from_crawler(cls, spider):
+        return cls(spider)
+
+    def __init__(self, spider) -> None:
+        # 判断文件是否下载过
+        # self.censored_path = os.path.join(actresses_data_path, self.censored_star_file_name)
+        # self.uncensored_path = os.path.join(actresses_data_path, self.uncensored_star_file_name)
+        # if os.path.exists(self.censored_path) and (self.process_item_data_str in self.censored_path) \
+        #         and os.path.exists(self.uncensored_path) and (self.process_item_data_str in self.uncensored_path):
+        #     self.today_has_download = True
+        pass
+
     def process_item(self, item, spider):
+        # 因为是自定义的第一个pipeline 用作判断当当前日期存在
+        # 下载的cvs文件 那么久触发crawl 退出
+        # TODO 优雅的在pipeline中停止spider
+        if self.today_has_download:
+            spider.crawler.engine.close_spider(spider, 'crawl file for this day exists')
         return item
 
 

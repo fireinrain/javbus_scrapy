@@ -107,7 +107,7 @@ ITEM_PIPELINES = {
 # # 配置数据的保存目录
 DATA_STORE = './data_store'
 # 只爬取censored censored uncensored all
-CENSORED = 'uncensored'
+CENSORED = 'censored'
 
 DOMAIN_BASE_URL = "https://www.javbus.com"
 ACTRESSES_PATH_NAME = "actresses"
