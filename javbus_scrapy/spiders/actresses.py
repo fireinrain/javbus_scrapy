@@ -201,7 +201,7 @@ class ActressesSpider(scrapy.Spider):
         self.log(f"{self.__class__.__name__} 准备进行补爬......")
         if len(self.interrupt_bad_url) < 0:
             return
-        result = utils.patch_new_cookie_for_403(self.interrupt_bad_url.keys())
+        result = utils.patch_new_cookie_for_403(self, self.interrupt_bad_url.keys())
         if result is None:
             return
         urls = result[0]

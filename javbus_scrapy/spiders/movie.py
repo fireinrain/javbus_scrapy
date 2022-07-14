@@ -131,6 +131,7 @@ class MovieSpider(scrapy.Spider):
 
     def fetch_all_stariteminfo_file_url(self, path_join, censored):
         with open(path_join, "r") as file:
+            line_count = 0
             while True:
                 readline = file.readline()
                 if readline == "":
@@ -142,6 +143,8 @@ class MovieSpider(scrapy.Spider):
                                      headers=utils.make_movie_detail_header(url, self.base_url),
                                      cookies=self.cookies,
                                      meta={"censored": censored})
+                line_count += 1
+        self.log(f"完成文件读取，共请求: {line_count}部作品......")
 
     def parse(self, response):
         url = response.request.url
@@ -327,7 +330,7 @@ class MovieSpider(scrapy.Spider):
         self.log(f"{self.__class__.__name__} 准备进行补爬......")
         if len(self.interrupt_bad_url) < 0:
             return
-        result = utils.patch_new_cookie_for_403(self.interrupt_bad_url.keys())
+        result = utils.patch_new_cookie_for_403(self, self.interrupt_bad_url.keys())
         if result is None:
             return
         urls = result[0]

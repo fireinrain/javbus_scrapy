@@ -373,15 +373,20 @@ def process_str_with_no_rn(csv_str):
 
 # 检查页面是否是400
 # 1573
-def patch_new_cookie_for_403(urls) -> []:
+def patch_new_cookie_for_403(spider=None, urls=None) -> []:
     """
     检查页面是否是400 返回可用的url 和cookie
+    :param spider:
+    :type spider:
     :param urls:
     :type urls:
     :return:
     :rtype:
     """
-    print("正在检测补爬url......")
+    if spider is None:
+        print("正在检测补爬url......")
+    else:
+        spider.log('正在检测补爬url......')
     if len(urls) < 0:
         return None
     user_agent = {"user-Agent": UserAgent(verify_ssl=False).random}
@@ -409,8 +414,12 @@ def patch_new_cookie_for_403(urls) -> []:
     for url in urls:
         response = client_session.get(url)
         if response.status_code == 200:
-            print(f"url:{url} is 403(available) page.......")
-            print(f"url: {url} is patch ok......")
+            if spider is None:
+                print(f"url:{url} is 403(available) page.......")
+                print(f"url: {url} is patch ok......")
+            else:
+                spider.log(f"url:{url} is 403(available) page.......")
+                spider.log(f"url: {url} is patch ok......")
             result.append(url)
     r.append(result)
     r.append(cookies)

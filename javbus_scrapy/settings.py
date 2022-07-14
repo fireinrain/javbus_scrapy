@@ -9,6 +9,8 @@
 import os
 from datetime import datetime
 
+from javbus_scrapy import spider_config
+
 BOT_NAME = 'javbus_scrapy'
 
 SPIDER_MODULES = ['javbus_scrapy.spiders']
@@ -105,30 +107,30 @@ ITEM_PIPELINES = {
 # MYSQL_PASS = 'sunriseme1994'
 
 # # 配置数据的保存目录
-DATA_STORE = './data_store'
+DATA_STORE = os.path.join(os.path.dirname(os.path.dirname(__file__)), spider_config['spider_config'])
 # 只爬取censored censored uncensored all
-CENSORED = 'censored'
+CENSORED = spider_config['censored_option']
 
-DOMAIN_BASE_URL = "https://www.javbus.com"
-ACTRESSES_PATH_NAME = "actresses"
-STARINFO_PATH_NAME = "starinfo"
-STARITEMINFO_PATH_NAME = "stariteminfo"
-MOVIE_DETAIL_PATH_NAME = "moviedetail"
-TORRENT_DETAIL_PATH_NAME = "torrentdetail"
+DOMAIN_BASE_URL = spider_config['domain_base_url']
+ACTRESSES_PATH_NAME = spider_config['actresses_path_name']
+STARINFO_PATH_NAME = spider_config['starinfo_path_name']
+STARITEMINFO_PATH_NAME = spider_config['stariteminfo_path_name']
+MOVIE_DETAIL_PATH_NAME = spider_config['movie_detail_path_name']
+TORRENT_DETAIL_PATH_NAME = spider_config['torrent_detail_path_name']
 REQUESTS_PROXIES = {
-    'http': 'http://127.0.0.1:7892',
-    'https': 'http://127.0.0.1:7892',
+    'http': spider_config['proxy_detail'],
+    'https': spider_config['proxy_detail'],
 }
 
 # 文件及路径，log目录需要先建好
 today = datetime.now()
 setting_dir = os.path.dirname(__file__)
 log_dir = os.path.dirname(setting_dir)
-log_dir = os.path.join(log_dir, "logs")
+log_dir = os.path.join(log_dir, spider_config['log_dir_name'])
 
 # 日志输出
 # LOG_LEVEL = 'ERROR'
-LOG_LEVEL = 'DEBUG'
+LOG_LEVEL = spider_config['log_level']
 
 # 开启log file 日志输出就不回输出到控制台了
 LOG_FILE = log_dir + "/" + "scrapy_{}_{}_{}:{}:{}:{}.log".format(today.year, today.month, today.day, today.hour,

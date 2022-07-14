@@ -297,7 +297,7 @@ def test_check_page_is_404():
     """
     split = strs.strip().split("\n")
 
-    results = patch_new_cookie_for_403(set(split))
+    results = patch_new_cookie_for_403(urls=set(split))
     print(results)
 
 
@@ -305,6 +305,14 @@ def test_key_value_of_dict():
     a = {"a": 1, "b": 2}
     for key, value in a.items():
         print(key, value)
+
+
+def test_config_with_ini():
+    from javbus_scrapy import global_config
+    print(global_config.items('spider_config'))
+    print(global_config.get('spider_config', 'data_store_name'))
+    print(global_config['spider_config']['data_store_name'])
+    print(global_config['spider_config']['proxy_detail'])
 
 
 if __name__ == '__main__':
@@ -319,6 +327,6 @@ if __name__ == '__main__':
     # test_re_extract_html_content()
     # test_check_str_is_a_valid_url("")
     # test_process_str_with_rn()
-    test_check_page_is_404()
-
+    # test_check_page_is_404()
+    test_config_with_ini()
     pass
