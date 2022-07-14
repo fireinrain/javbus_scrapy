@@ -13,165 +13,330 @@ import sqlite3
 
 from javbus_scrapy import settings
 
-db_store_path = os.path.join(settings.DATA_STORE, "javbus.db")
 
-db = sqlite3.connect(db_store_path)
+class SqliteStorage:
+    db_name = None
 
-db_cursor = db.cursor()
+    def __init__(self, db_name):
+        self.db_name = db_name
 
-# create table for javbus actresses
-# # 名字
-# name
-# # 个人主页地址
-# star_page_url
-# # 最新的一部作品url
-# latest_movie_url
-# # 最新作品简介
-# latest_movie_intro -> latest_movie_code,latest_movie_publish_date,latest_movie_name
-# # 大头贴地址
-# head_photo_url
-# # censored or uncensored
-# # 有码 还是无码
-# censored
-create_actress_sql = 'create table if not exists actresses(' \
-                     'id INTEGER PRIMARY KEY,' \
-                     'star_info_id INTEGER,' \
-                     'user_name TEXT, ' \
-                     'start_page_url TEXT,' \
-                     'latest_movie_url TEXT,' \
-                     'latest_movie_code TEXT,' \
-                     'latest_movie_publish_date TEXT,' \
-                     'latest_movie_name TEXT,' \
-                     'head_photo_url TEXT,' \
-                     'censor_url TEXT)'
+        self.db_store_path = os.path.join(settings.DATA_STORE, self.db_name)
 
-db.execute(create_actress_sql)
+        self.db = sqlite3.connect(self.db_store_path)
 
-# create table for javbus movie item intro
-# 名字
-# star_name
-# 作品url
-# movie_url
-# 作品封面图片地址
-# movie_cover_url
-# 作品名
-# movie_title
-# 是否是有码作品 默认是True 有码
-# movie_censored
-# 是否有磁力链接 默认为False
-# movie_has_magnet
-# 作品清晰度  默认为""
-# movie_resolutions
-# 作品是否有字幕下载的磁力 默认为False
-# movie_has_subtitle
-# 作品字幕标识 默认为""
-# movie_subtitle_flag
-# 作品番号
-# movie_code
-# 作品发行日期
-# movie_publish_date
-create_movie_intro_sql = 'create table if not exists movie_intro(' \
-                         'id INTEGER PRIMARY KEY,' \
-                         'actress_id INTEGER,' \
-                         'star_name TEXT,' \
-                         'movie_url TEXT,' \
-                         'movie_cover_url TEXT,' \
-                         'movie_title TEXT,' \
-                         'movie_censored TEXT,' \
-                         'movie_has_magnet TEXT,' \
-                         'movie_resolutions TEXT,' \
-                         'movie_has_subtitle TEXT,' \
-                         'movie_subtitle_flag TEXT,' \
-                         'movie_code TEXT,' \
-                         'movie_publish_date TEXT' \
-                         ')'
-db_cursor.execute(create_movie_intro_sql)
+        self.db_cursor = self.db.cursor()
 
-# create table for movie star info
-# 演员名
-# star_name
-# 大头贴url
-# star_head_photo_url
-# 所有作品数量
-# all_item_counts
-# 磁力作品数量
-# magnet_item_counts
-# 有码演员
-# censored_star
-# 生日
-# birthday
-# 年龄
-# age
-# 身高
-# height
-# 罩杯
-# cup
-# 胸围
-# chest_circumference
-# 腰围
-# waistline
-# 臀围
-# hip_circumference
-# 出生地
-# birthplace
-# 爱好
-# habbits
-create_star_info_sql = 'create table if not exists star_info(' \
-                       'id INTEGER PRIMARY KEY,' \
-                       'star_name TEXT,' \
-                       'star_head_photo_url TEXT,' \
-                       'all_item_counts INTEGER,' \
-                       'magnet_item_counts INTEGER,' \
-                       'censored_star TEXT,' \
-                       'birthday TEXT,' \
-                       'age TEXT,' \
-                       'height TEXT,' \
-                       'cup TEXT,' \
-                       'chest_circumference TEXT,' \
-                       'waistline TEXT,' \
-                       'hip_circumference TEXT,' \
-                       'birthplace TEXT,' \
-                       'habbits TEXT' \
-                       ')'
+        self.default_column = {"create_datetime": "TEXT", "update_datetime": "TEXT"}
 
-db_cursor.execute(create_star_info_sql)
+    def do_create_table_if_not_exists(self, create_table_sql, index_sql=None):
+        try:
+            self.db_cursor.execute(create_table_sql)
+            if index_sql is not None:
+                self.db_cursor.execute(index_sql)
+            self.db.commit()
+        except Exception as e:
+            print(f"sql: {create_table_sql}|{index_sql}")
+            print(f"cant create table dude to exception: {e}")
+            self.db.rollback()
 
-# create table for movie detail
-# 作品名
-# movie_title
-# 是否为有码作品
-# movie_censored
-# 作品链接
-# movie_url
-# 封面缩略图
-# movie_cover_url
-# 番号
-# movie_code
-# 发行日期
-# movie_publish_date
-# 作品时长
-# movie_duration
-# 导演
-# movie_directors
-# 制作商
-# movie_maker
-# 发行商
-# movie_publisher
-# 系列
-# movie_series
-# 类别
-# movie_tags
-# 演员列表
-# movie_stars
-# 样品图链接
-# movie_sample_photo_urls
+    def do_excute_sql_with_no_result(self, sql):
+        try:
+            self.db_cursor.execute(sql)
+            self.db.commit()
+        except Exception as e:
+            print(f"cant create table dude to exception: {e}")
+            self.db.rollback()
 
-# create table for torrent info
+    # create_table_actress
+    def create_table_actresses(self):
+        sql = 'create table if not exists actresses(' \
+              'id INTEGER PRIMARY KEY,' \
+              'star_info_id INTEGER,' \
+              'user_name TEXT,' \
+              'start_page_url TEXT,' \
+              'latest_movie_url TEXT,' \
+              'latest_movie_code TEXT,' \
+              'latest_movie_publish_date TEXT,' \
+              'latest_movie_name TEXT,' \
+              'head_photo_url TEXT,' \
+              'censor_url TEXT)'
+        sql = self.sql_fillter_process(sql, self.default_column)
+        self.do_create_table_if_not_exists(sql)
 
-# create table for toorent_info_detail
+    # create table for javbus movie item intro
+    def create_table_movie_intro(self):
+        sql = 'create table if not exists movie_intro(' \
+              'id INTEGER PRIMARY KEY,' \
+              'star_name TEXT,' \
+              'movie_url TEXT,' \
+              'movie_cover_url TEXT,' \
+              'movie_title TEXT,' \
+              'movie_censored TEXT,' \
+              'movie_has_magnet TEXT,' \
+              'movie_resolutions TEXT,' \
+              'movie_has_subtitle TEXT,' \
+              'movie_subtitle_flag TEXT,' \
+              'movie_code TEXT,' \
+              'movie_publish_date TEXT' \
+              ')'
+        sql = self.sql_fillter_process(sql, self.default_column)
+        self.do_create_table_if_not_exists(sql)
 
-# create table for torrent detail
+    # create table for star info
+    def create_table_star_info(self):
+        sql = 'create table if not exists star_info(' \
+              'id INTEGER PRIMARY KEY,' \
+              'star_name TEXT,' \
+              'star_head_photo_url TEXT,' \
+              'all_item_counts INTEGER,' \
+              'magnet_item_counts INTEGER,' \
+              'censored_star TEXT,' \
+              'birthday TEXT,' \
+              'age TEXT,' \
+              'height TEXT,' \
+              'cup TEXT,' \
+              'chest_circumference TEXT,' \
+              'waistline TEXT,' \
+              'hip_circumference TEXT,' \
+              'birthplace TEXT,' \
+              'habbits TEXT' \
+              ')'
+        sql = self.sql_fillter_process(sql, self.default_column)
+        self.do_create_table_if_not_exists(sql)
+
+    # create table for movie detail
+    def create_table_movie_detail(self):
+        sql = 'create table if not exists movie_detail(' \
+              'id INTEGER PRIMARY KEY autoincrement,' \
+              'movie_intro_id INTEGER,' \
+              'movie_title TEXT,' \
+              'movie_censored TEXT,' \
+              'movie_url TEXT,' \
+              'movie_cover_url TEXT,' \
+              'movie_code TEXT,' \
+              'movie_publish_date TEXT,' \
+              'movie_duration TEXT,' \
+              'movie_director_id INTEGER,' \
+              'movie_maker_id INTEGER,' \
+              'movie_publisher_id INTEGER,' \
+              'movie_series_id INTEGER,' \
+              'movie_tags_id INTEGER,' \
+              'movie_stars_id INTEGER,' \
+              'movie_sample_photo_urls TEXT)'
+        sql = self.sql_fillter_process(sql, self.default_column)
+
+        index_sql = 'create index if not exists movie_detail_movie_code_index  on movie_detail(movie_code)'
+        self.do_create_table_if_not_exists(sql, index_sql)
+
+    # create table for movie director
+    def create_table_movie_director(self):
+        sql = 'create table if not exists movie_director(' \
+              'id INTEGER PRIMARY KEY autoincrement,' \
+              'director_name TEXT)'
+        sql = self.sql_fillter_process(sql, self.default_column)
+
+        self.do_create_table_if_not_exists(sql)
+
+    # create table for movie maker
+    def create_table_movie_maker(self):
+        sql = 'create table if not exists movie_maker(' \
+              'id INTEGER PRIMARY KEY autoincrement,' \
+              'movie_maker_name TEXT)'
+        sql = self.sql_fillter_process(sql, self.default_column)
+
+        self.do_create_table_if_not_exists(sql)
+
+    # create table for movie publisher
+    def create_table_movie_publisher(self):
+        sql = 'create table if not exists movie_publisher(' \
+              'id INTEGER PRIMARY KEY autoincrement,' \
+              'movie_publisher_name TEXT)'
+        sql = self.sql_fillter_process(sql, self.default_column)
+
+        self.do_create_table_if_not_exists(sql)
+
+    # create table for movie series
+    def create_table_movie_series(self):
+        sql = 'create table if not exists movie_series(' \
+              'id INTEGER PRIMARY KEY autoincrement,' \
+              'series_name TEXT)'
+        sql = self.sql_fillter_process(sql, self.default_column)
+
+        self.do_create_table_if_not_exists(sql)
+
+    # create table for movie_detail_series
+    def create_table_movie_detail_series(self):
+        sql = 'create table if not exists movie_detail_series(' \
+              'id INTEGER PRIMARY KEY autoincrement,' \
+              'movie_detail_id INTEGER,' \
+              'movie_series_id INTEGER)'
+        sql = self.sql_fillter_process(sql, self.default_column)
+
+        self.do_create_table_if_not_exists(sql)
+
+    # create table for movie_tags
+    def create_table_movie_tags(self):
+        sql = 'create table if not exists movie_tags(' \
+              'id INTEGER PRIMARY KEY autoincrement,' \
+              'tags_name TEXT)'
+        sql = self.sql_fillter_process(sql, self.default_column)
+
+        self.do_create_table_if_not_exists(sql)
+
+    # create table for movie_detail_tags
+    def create_table_movie_detail_tags(self):
+        sql = 'create table if not exists movie_detail_tags(' \
+              'id INTEGER PRIMARY KEY autoincrement,' \
+              'movie_detail_id INTEGER,' \
+              'movie_tags_id INTEGER)'
+        sql = self.sql_fillter_process(sql, self.default_column)
+
+        self.do_create_table_if_not_exists(sql)
+
+    # create table for movie detail stars info
+    def create_table_movie_detail_star_info(self):
+        sql = 'create table if not exists movie_detail_star_info(' \
+              'id INTEGER PRIMARY KEY autoincrement,' \
+              'movie_detail_id INTEGER,' \
+              'star_info_id INTEGER)'
+        sql = self.sql_fillter_process(sql, self.default_column)
+
+        self.do_create_table_if_not_exists(sql)
+
+    # create table for movie torrent
+    def create_table_movie_torrent(self):
+        sql = 'create table if not exists movie_torrent(' \
+              'id INTEGER PRIMARY KEY autoincrement,' \
+              'movie_code TEXT,' \
+              'movie_url TEXT,' \
+              'movie_torrent_detail_id INTEGER)'
+        sql = self.sql_fillter_process(sql, self.default_column)
+
+        index_sql = 'create index if not exists movie_torrent_movie_code_index on movie_torrent(movie_code)'
+        self.do_create_table_if_not_exists(sql, index_sql)
+
+    # create table for  torrent detail
+    def create_table_torrent_detail(self):
+        sql = 'create table if not exists torrent_detail(' \
+              'id INTEGER PRIMARY KEY autoincrement,' \
+              'movie_code TEXT,' \
+              'torrent_name TEXT,' \
+              'torrent_resolution TEXT,' \
+              'torrent_subtitle TEXT,' \
+              'torrent_movie_size TEXT,' \
+              'torrent_share_date TEXT,' \
+              'torrent_url TEXT)'
+        sql = self.sql_fillter_process(sql, self.default_column)
+
+        index_sql = 'create index if not exists torrent_detail_movie_code_index on torrent_detail(movie_code)'
+        self.do_create_table_if_not_exists(sql, index_sql)
+
+    # create table for movie detail torrent_detail
+    def create_table_movie_torrent_detail(self):
+        sql = 'create table if not exists movie_torrent_detail(' \
+              'id INTEGER PRIMARY KEY autoincrement,' \
+              'movie_toorent_id INTEGER,' \
+              'torrent_detail_id INTEGER)'
+        sql = self.sql_fillter_process(sql, self.default_column)
+
+        self.do_create_table_if_not_exists(sql)
+
+    # 给sql 添加一些指定的字段
+    @staticmethod
+    def sql_fillter_process(sql: str = None, colum_dict: {} = None):
+        """
+        给create sql 添加一些默认字段
+        :param sql:
+        :type sql:
+        :param colum_dict:
+        :type colum_dict:
+        :return:
+        :rtype:
+        """
+        if sql is None or colum_dict is None:
+            return None
+        temp_list = []
+        for colum, type in colum_dict.items():
+            temp_list.append(colum + " " + type)
+        append_str = ",".join(temp_list)
+        replace = sql.replace(")", "," + append_str + ")", 1)
+        return replace
+
+    def drop_table_by_table_name(self, table_name: str):
+        """
+        按照表名删除表
+        :param table_name:
+        :type table_name:
+        :return:
+        :rtype:
+        """
+        if table_name is None or table_name == "":
+            return
+        sql = f'drop table {table_name}'
+        self.do_excute_sql_with_no_result(sql)
+
+    def invoke_excute_method(self, method_name, *args):
+        """
+        反射调用创建表的方法
+        :param method_name:
+        :type method_name:
+        :param args:
+        :type args:
+        :return:
+        :rtype:
+        """
+        method_or_attribute = dir(self)
+        if method_name not in method_or_attribute:
+            print(f"cant invoke method on {self.__class__.__name__}")
+            return
+        method = getattr(self, method_name)
+        method(*args)
+
+    def init_db_tables(self):
+        """
+        初始化表结构
+        :return:
+        :rtype:
+        """
+        print(f"start to init_db_tables......")
+        method_or_attribute = dir(self)
+        crate_table_methods = [i for i in method_or_attribute if i.startswith("create_table")]
+        for m in crate_table_methods:
+            print(f"create table: {m.replace('create_table_', '')}")
+            self.invoke_excute_method(m)
+        print(f"create tables success!")
+
+    def drop_all_table_with_index(self):
+        """
+        删除表 包括表所创建的索引
+        :return:
+        :rtype:
+        """
+        sql = 'select name,tbl_name from sqlite_master where type == "index"'
+        self.db_cursor.execute(sql)
+        fetchall = self.db_cursor.fetchall()
+        if len(fetchall) == 0:
+            return
+        for i, tab in fetchall:
+            # print(i, tab)
+            drop_index_sql = f'drop index if exists {tab}.{i}'
+            self.do_excute_sql_with_no_result(drop_index_sql)
+        method_or_attribute = dir(self)
+
+        crate_table_methods = [i for i in method_or_attribute if i.startswith("create_table")]
+        table_names = [i.replace("create_table_", "") for i in crate_table_methods]
+        for table in table_names:
+            self.drop_table_by_table_name(table)
+
+    def import_db_from_csv(self):
+        """
+        将csv数据导入到sqlite中
+        :return:
+        :rtype:
+        """
+        pass
 
 
 if __name__ == '__main__':
-    pass
+    storage = SqliteStorage("javbus.db")
+    storage.init_db_tables()

@@ -107,7 +107,7 @@ ITEM_PIPELINES = {
 # MYSQL_PASS = 'sunriseme1994'
 
 # # 配置数据的保存目录
-DATA_STORE = os.path.join(os.path.dirname(os.path.dirname(__file__)), spider_config['spider_config'])
+DATA_STORE = os.path.join(os.path.dirname(os.path.dirname(__file__)), spider_config['data_store_name'])
 # 只爬取censored censored uncensored all
 CENSORED = spider_config['censored_option']
 
