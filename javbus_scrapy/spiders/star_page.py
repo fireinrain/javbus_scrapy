@@ -140,7 +140,7 @@ class StarPageSpider(scrapy.Spider):
                 readline = file.readline()
                 if readline == "":
                     break
-                readline_split = readline.split(",")
+                readline_split = readline.split("|")
                 # star main page url
                 url = readline_split[1].strip()
                 # 检查url是否合法

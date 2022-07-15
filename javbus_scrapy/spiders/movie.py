@@ -136,7 +136,7 @@ class MovieSpider(scrapy.Spider):
                 readline = file.readline()
                 if readline == "":
                     break
-                readline_split = readline.split(",")
+                readline_split = readline.split("|")
                 # star main page url
                 url = readline_split[1].strip()
                 yield scrapy.Request(url, self.parse,
@@ -232,7 +232,7 @@ class MovieSpider(scrapy.Spider):
             for i in sample_image_nodes:
                 img_url = i.xpath('./@href').get(default="")
                 images.append(img_url)
-            movie_detail_item['movie_sample_photo_urls'] = "|".join(images)
+            movie_detail_item['movie_sample_photo_urls'] = ",".join(images)
 
         # 如果只是测试 不需要写入文件
         # if 'saveFile' in response.meta.keys():
@@ -315,9 +315,9 @@ class MovieSpider(scrapy.Spider):
             file_share_date = share_date.xpath('./a/text()').get(default="")
             line.append(file_share_date.strip())
 
-            torrent_line = "/".join(line)
+            torrent_line = ",".join(line)
             all_torrent_list.append(torrent_line)
-        all_torrent_line = "|".join(all_torrent_list)
+        all_torrent_line = "#".join(all_torrent_list)
 
         torrent_item['torrent_list_str'] = all_torrent_line
 

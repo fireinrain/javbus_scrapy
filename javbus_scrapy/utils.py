@@ -354,7 +354,7 @@ def pre_check_str_is_a_valid_url(cvs_file_path):
             readline = file.readline()
             if readline == "":
                 break
-            split = readline.split(",")
+            split = readline.split("|")
             # print(readline)
             url = split[1]
             valid_url = check_a_str_is_valid_url(url)
@@ -424,6 +424,28 @@ def patch_new_cookie_for_403(spider=None, urls=None) -> []:
     r.append(result)
     r.append(cookies)
     return r
+
+
+def latest_csv_pair_data_tuple_path(data_store_abs_path, data_folder_name):
+    join = os.path.join(data_store_abs_path, data_folder_name)
+    listdir = os.listdir(join)
+    files = [i for i in listdir if i != ".DS_Store"]
+    result = []
+    no_same = set()
+    for f in files:
+        f_split = f.split("_")
+        no_same.add(f_split[2])
+    for date_str in no_same:
+        pair = []
+        for f in files:
+            if date_str in f:
+                pair.append(f)
+                pair.sort(key=lambda x: x.startswith("censored"), reverse=True)
+        result.append(pair)
+    result.sort(key=lambda x: x[0].split("_")[2], reverse=True)
+    # 最新的一组
+    result = [os.path.join(join, i) for i in result[0]]
+    return result
 
 
 # 比较两个文件的不同

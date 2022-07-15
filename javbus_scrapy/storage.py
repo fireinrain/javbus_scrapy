@@ -10,8 +10,10 @@
 """
 import os
 import sqlite3
+import time
 
-from javbus_scrapy import settings
+from javbus_scrapy import settings, utils
+from javbus_scrapy.settings import DATA_STORE, ACTRESSES_PATH_NAME, STARINFO_PATH_NAME
 
 
 class SqliteStorage:
@@ -26,7 +28,7 @@ class SqliteStorage:
 
         self.db_cursor = self.db.cursor()
 
-        self.default_column = {"create_datetime": "TEXT", "update_datetime": "TEXT"}
+        self.default_column = [("create_datetime", "TEXT"), ("update_datetime", "TEXT")]
 
     def do_create_table_if_not_exists(self, create_table_sql, index_sql=None):
         try:
@@ -59,7 +61,7 @@ class SqliteStorage:
               'latest_movie_publish_date TEXT,' \
               'latest_movie_name TEXT,' \
               'head_photo_url TEXT,' \
-              'censor_url TEXT)'
+              'censored TEXT)'
         sql = self.sql_fillter_process(sql, self.default_column)
         self.do_create_table_if_not_exists(sql)
 
@@ -243,7 +245,7 @@ class SqliteStorage:
 
     # 给sql 添加一些指定的字段
     @staticmethod
-    def sql_fillter_process(sql: str = None, colum_dict: {} = None):
+    def sql_fillter_process(sql: str = None, colum_dict: [] = None):
         """
         给create sql 添加一些默认字段
         :param sql:
@@ -256,7 +258,7 @@ class SqliteStorage:
         if sql is None or colum_dict is None:
             return None
         temp_list = []
-        for colum, type in colum_dict.items():
+        for colum, type in colum_dict:
             temp_list.append(colum + " " + type)
         append_str = ",".join(temp_list)
         replace = sql.replace(")", "," + append_str + ")", 1)
@@ -298,12 +300,20 @@ class SqliteStorage:
         :return:
         :rtype:
         """
+        # 获取所有的表
+        sql = 'select tbl_name from sqlite_master where type == "table"'
+        execute = self.db_cursor.execute(sql)
+        fetchall = execute.fetchall()
+        exist_table = [i[0] for i in fetchall]
         print(f"start to init_db_tables......")
         method_or_attribute = dir(self)
         crate_table_methods = [i for i in method_or_attribute if i.startswith("create_table")]
         for m in crate_table_methods:
-            print(f"create table: {m.replace('create_table_', '')}")
+            table_name = m.replace('create_table_', '')
+            if table_name in exist_table:
+                continue
             self.invoke_excute_method(m)
+            print(f"create table: {m.replace('create_table_', '')}")
         print(f"create tables success!")
 
     def drop_all_table_with_index(self):
@@ -312,10 +322,12 @@ class SqliteStorage:
         :return:
         :rtype:
         """
+        print(f"start to drop all tables......")
         sql = 'select name,tbl_name from sqlite_master where type == "index"'
         self.db_cursor.execute(sql)
         fetchall = self.db_cursor.fetchall()
         if len(fetchall) == 0:
+            print(f"there are no tables in local db file!")
             return
         for i, tab in fetchall:
             # print(i, tab)
@@ -327,6 +339,128 @@ class SqliteStorage:
         table_names = [i.replace("create_table_", "") for i in crate_table_methods]
         for table in table_names:
             self.drop_table_by_table_name(table)
+        print(f"drop all tables success!")
+
+    def import_actresses_to_sqlite(self):
+        """
+        导入actresses数据
+        :return:
+        :rtype:
+        """
+        sql = 'insert into actresses(' \
+              'star_info_id,' \
+              'user_name,' \
+              'star_page_url,' \
+              'latest_movie_url,' \
+              'latest_movie_publish_date,' \
+              'latest_movie_name,' \
+              'head_photo_url,' \
+              'censored) values(?,?,?,?,?,?,?,?)'
+
+        sql = self.add_default_column_in_insert_sql(sql, self.default_column)
+
+        actresses_files = utils.latest_csv_pair_data_tuple_path(DATA_STORE, ACTRESSES_PATH_NAME)
+        for file in actresses_files:
+            with open(file, 'r') as fi:
+                while True:
+                    readline = fi.readline()
+                    if readline == "":
+                        break
+                    split = readline.split("|")
+                    name = split[0].strip()
+                    query_sql = f'select id from star_info where star_name="{name}"'
+                    execute = self.db_cursor.execute(query_sql)
+                    star_info_id = execute.fetchone()
+                    print(star_info_id)
+
+    def import_star_info_to_sqlite(self):
+        """
+        将star_info csv 文件导入到sqlite
+        :return:
+        :rtype:
+        """
+        sql = 'insert into star_info(' \
+              'star_name,' \
+              'star_head_photo_url,' \
+              'all_item_counts,' \
+              'magnet_item_counts,' \
+              'censored_star,' \
+              'birthday,' \
+              'age,' \
+              'height,' \
+              'cup,' \
+              'chest_circumference,' \
+              'waistline,' \
+              'hip_circumference,' \
+              'birthplace,' \
+              'habbits) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        self.import_data_csv_to_sqlite(insert_sql=sql, data_store_abs_path=STARINFO_PATH_NAME)
+
+    # 给插入sql 设定默认行
+    @staticmethod
+    def add_default_column_in_insert_sql(sql: str = None, colum_dict: {} = None):
+        if sql is None or colum_dict is None:
+            return None
+
+        keys = [i[0] for i in colum_dict]
+        key_size = len(keys)
+        append_str = ",".join(keys)
+        index = sql.index(")")
+        left_str = sql[:index]
+        right_str = sql[index + 1:]
+        left_str = left_str + "," + append_str + ")"
+
+        end_str = ",".join(list(("?" * key_size)))
+        right_str = right_str[:-1] + "," + end_str + ")"
+        sql = left_str + right_str
+
+        return sql
+
+    def import_data_csv_to_sqlite(self, batch_count: int = 10000, insert_sql: str = None,
+                                  data_store_abs_path: str = None):
+        if insert_sql is None or data_store_abs_path is None:
+            print("insert_sql or data_store_abs_path should not be None")
+            return
+        star_info_files = utils.latest_csv_pair_data_tuple_path(DATA_STORE, data_store_abs_path)
+        insert_sql = self.add_default_column_in_insert_sql(insert_sql, self.default_column)
+        table_name = insert_sql.replace("insert into", "").strip()
+        index = table_name.index("(")
+        table_name = table_name[:index]
+        counts = 0
+        for file in star_info_files:
+            with open(file, 'r') as fi:
+                batch_list = []
+                while True:
+                    readline = fi.readline()
+                    if readline == "":
+                        break
+                    readline_split = readline.strip().split("|")
+                    readline_split.append(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
+                    readline_split.append(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
+                    # line_t = tuple(readline_split)
+                    # try:
+                    #     self.db_cursor.execute(insert_sql,line_t)
+                    #     self.db.commit()
+                    # except Exception as e:
+                    #     print(line_t)
+                    #     print(f"insert error: {e}")
+                    batch_list.append(tuple(readline_split))
+                    if len(batch_list) >= batch_count:
+                        try:
+                            self.db_cursor.executemany(insert_sql, batch_list)
+                            self.db.commit()
+                        except Exception as e:
+                            print(f"insert exception: {e}")
+                            self.db.rollback()
+                        batch_list = []
+                        counts += batch_count
+                    else:
+                        continue
+                self.db_cursor.executemany(insert_sql, batch_list)
+                self.db.commit()
+                counts += len(batch_list)
+
+        print(f"成功插入{table_name}: {counts}条记录......")
 
     def import_db_from_csv(self):
         """
@@ -339,4 +473,7 @@ class SqliteStorage:
 
 if __name__ == '__main__':
     storage = SqliteStorage("javbus.db")
-    storage.init_db_tables()
+    storage.import_actresses_to_sqlite()
+    # storage.init_db_tables()
+    # storage.import_star_info_to_sqlite()
+    # storage.drop_all_table_with_index()

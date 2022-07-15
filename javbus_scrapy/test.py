@@ -8,7 +8,7 @@
 @Software: PyCharm
 @Time    : 2022/7/10 9:55 AM
 """
-
+from javbus_scrapy.settings import DATA_STORE
 from javbus_scrapy.utils import *
 
 
@@ -131,7 +131,7 @@ def test_check_str_is_a_valid_url(cvs_file_path):
             readline = file.readline()
             # if readline == "":
             #     break
-            split = readline.split(",")
+            split = readline.split("|")
             print(readline)
             url = split[1]
             valid_url = check_a_str_is_valid_url(url)
@@ -315,6 +315,40 @@ def test_config_with_ini():
     print(global_config['spider_config']['proxy_detail'])
 
 
+def test_latest_csv_pair_data_tuple_path():
+    print(latest_csv_pair_data_tuple_path(DATA_STORE, "actresses"))
+
+
+def change_store_line_formate(file_abs_path: str = None):
+    with open(
+            "/Users/sunrise/CodeGround/PycharmProjects/javbus_scrapy/data_store/starinfo/uncensored_starinfo_2022-07-13.csv",
+            "r") as file:
+        readlines = file.readlines()
+        for line in readlines:
+            split = line.split(",")
+            new_line = None
+            if len(split) > 14:
+                padding = len(split) - 14
+                habbits = ",".join(split[len(split) - padding - 1:])
+                left = "|".join(split[:len(split) - padding - 1])
+                join = ",".join(split).replace(habbits, "") + habbits
+                print(left + "|" + habbits)
+                # print(join)
+                # print(padding)
+                # print(habbits)
+                # print(split)
+                new_line = left + "|" + habbits
+                line_strip = new_line.strip()
+                new_line = line_strip + "\n"
+            else:
+                new_line = "|".join(split)
+                strip = new_line.strip()
+                new_line = strip + "\n"
+
+            with open("new_line.txt", "a+") as f:
+                f.write(new_line)
+
+
 if __name__ == '__main__':
     # test_make_actresses_header()
     # test_fetch_page_with_cookie_all()
@@ -328,5 +362,7 @@ if __name__ == '__main__':
     # test_check_str_is_a_valid_url("")
     # test_process_str_with_rn()
     # test_check_page_is_404()
-    test_config_with_ini()
+    # test_config_with_ini()
+    # test_latest_csv_pair_data_tuple_path()
+    # print(",".join(list(("?" * len([1, 2, 3])))))
     pass

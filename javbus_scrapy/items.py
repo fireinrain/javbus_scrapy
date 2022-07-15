@@ -46,8 +46,8 @@ class JavbusActressScrapyItem(scrapy.Item):
         self['censored'] = ""
 
     def get_csv_str(self):
-        return f"{self['name']},{self['star_page_url']},{self['latest_movie_url']}," \
-               f"{self['head_photo_url']},{self['latest_movie_intro']},{self['censored']}\n"
+        return f"{self['name']}|{self['star_page_url']}|{self['latest_movie_url']}|" \
+               f"{self['head_photo_url']}|{self['latest_movie_intro']}|{self['censored']}\n"
 
 
 # 个人主页 作品缩略项
@@ -85,9 +85,9 @@ class JavbusStarItemInfoScrapyItem(scrapy.Item):
         self['movie_censored'] = True
 
     def get_csv_str(self):
-        return f"{self['star_name']},{self['movie_url']},{self['movie_cover_url']}," \
-               f"{self['movie_title']},{self['movie_has_magnet']},{self['movie_resolutions']}," \
-               f"{self['movie_has_subtitle']},{self['movie_subtitle_flag']},{self['movie_code']}," \
+        return f"{self['star_name']}|{self['movie_url']}|{self['movie_cover_url']}|" \
+               f"{self['movie_title']}|{self['movie_has_magnet']}|{self['movie_resolutions']}|" \
+               f"{self['movie_has_subtitle']}|{self['movie_subtitle_flag']}|{self['movie_code']}|" \
                f"{self['movie_publish_date']}\n"
 
 
@@ -154,11 +154,11 @@ class JavbusStarInfoScrapyItem(scrapy.Item):
         self['habbits'] = ""
 
     def get_csv_str(self):
-        return f"{self['star_name']},{self['star_head_photo_url']},{self['all_item_counts']}," \
-               f"{self['magnet_item_counts']},{self['censored_star']},{self['birthday']}," \
-               f"{self['age']},{self['height']},{self['cup']}," \
-               f"{self['chest_circumference']},{self['waistline']},{self['hip_circumference']}," \
-               f"{self['birthplace']},{self['habbits']}\n"
+        return f"{self['star_name']}|{self['star_head_photo_url']}|{self['all_item_counts']}|" \
+               f"{self['magnet_item_counts']}|{self['censored_star']}|{self['birthday']}|" \
+               f"{self['age']}|{self['height']}|{self['cup']}|" \
+               f"{self['chest_circumference']}|{self['waistline']}|{self['hip_circumference']}|" \
+               f"{self['birthplace']}|{self['habbits']}\n"
 
 
 # 作品详情
@@ -223,10 +223,10 @@ class JavbusMovieDetailItem(scrapy.Item):
         self['movie_sample_photo_urls'] = ""
 
     def get_csv_str(self):
-        return f"{self['movie_title']},{self['movie_censored']},{self['movie_url']},{self['movie_cover_url']}," \
-               f"{self['movie_code']},{self['movie_publish_date']},{self['movie_duration']}," \
-               f"{self['movie_directors']},{self['movie_maker']},{self['movie_publisher']}," \
-               f"{self['movie_series']},{self['movie_tags']},{self['movie_stars']}," \
+        return f"{self['movie_title']}|{self['movie_censored']}|{self['movie_url']}|{self['movie_cover_url']}|" \
+               f"{self['movie_code']}|{self['movie_publish_date']}|{self['movie_duration']}|" \
+               f"{self['movie_directors']}|{self['movie_maker']}|{self['movie_publisher']}|" \
+               f"{self['movie_series']}|{self['movie_tags']}|{self['movie_stars']}|" \
                f"{self['movie_sample_photo_urls']}\n"
 
 
@@ -278,4 +278,4 @@ class JavbusMovieDetailTorrentItem(scrapy.Item):
         # self['torrent_str'] = ""
 
     def get_csv_str(self):
-        return f"{self['movie_code']},{self['movie_censored']},{self['movie_url']},{self['torrent_list_str']}\n"
+        return f"{self['movie_code']}|{self['movie_censored']}|{self['movie_url']}|{self['torrent_list_str']}\n"
