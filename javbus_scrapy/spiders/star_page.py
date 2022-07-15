@@ -272,7 +272,8 @@ class StarPageSpider(scrapy.Spider):
             item['movie_censored'] = censored_star
             # 作品名
             movie_title = item_node.xpath('./div[1]/img/@title').extract_first()
-            item['movie_title'] = movie_title.strip()
+            # | 已经用来做字段分隔符了 需要替换掉标题中出现的！
+            item['movie_title'] = movie_title.strip().replace('|', "-")
             # 作品番号
             movie_code = item_node.xpath('./div[2]/span/date[1]/text()').extract_first()
             findall = None

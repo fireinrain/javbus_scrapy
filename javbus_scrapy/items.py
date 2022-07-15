@@ -86,7 +86,7 @@ class JavbusStarItemInfoScrapyItem(scrapy.Item):
 
     def get_csv_str(self):
         return f"{self['star_name']}|{self['movie_url']}|{self['movie_cover_url']}|" \
-               f"{self['movie_title']}|{self['movie_has_magnet']}|{self['movie_resolutions']}|" \
+               f"{self['movie_title']}|{self['movie_has_magnet']}|{self['movie_censored']}|{self['movie_resolutions']}|" \
                f"{self['movie_has_subtitle']}|{self['movie_subtitle_flag']}|{self['movie_code']}|" \
                f"{self['movie_publish_date']}\n"
 

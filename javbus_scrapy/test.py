@@ -319,32 +319,48 @@ def test_latest_csv_pair_data_tuple_path():
     print(latest_csv_pair_data_tuple_path(DATA_STORE, "actresses"))
 
 
+# insert exception: Incorrect number of bindings supplied. The current statement uses 13, and there are 14 supplied.
 def change_store_line_formate(file_abs_path: str = None):
     with open(
-            "/Users/sunrise/CodeGround/PycharmProjects/javbus_scrapy/data_store/starinfo/uncensored_starinfo_2022-07-13.csv",
+            "/Users/sunrise/CodeGround/PycharmProjects/javbus_scrapy/data_store/stariteminfo/censored_staritem_2022-07-15.csv",
             "r") as file:
         readlines = file.readlines()
         for line in readlines:
-            split = line.split(",")
+            split = line.split("|")
             new_line = None
-            if len(split) > 14:
-                padding = len(split) - 14
-                habbits = ",".join(split[len(split) - padding - 1:])
-                left = "|".join(split[:len(split) - padding - 1])
-                join = ",".join(split).replace(habbits, "") + habbits
-                print(left + "|" + habbits)
+            if len(split) > 11:
+                print(split)
+
+                padding = len(split) - 11
+                left = split[:3]
+                right = split[-7:]
+                print(left)
+                print(right)
+                mid = "-".join(split[len(left):len(split) - len(right)])
+                print(mid)
+                left.append(mid)
+                all = left + right
+                print(left)
+                print(all)
+                # new_line = all
+                new_line = "|".join(all)
+
+                # habbits = ",".join(split[len(split) - padding - 1:])
+                # left = "|".join(split[:len(split) - padding - 1])
+                # join = ",".join(split).replace(habbits, "") + habbits
+                # print(left + "|" + habbits)
                 # print(join)
                 # print(padding)
                 # print(habbits)
                 # print(split)
-                new_line = left + "|" + habbits
-                line_strip = new_line.strip()
-                new_line = line_strip + "\n"
+            #     new_line = left + "|" + habbits
+            #     line_strip = new_line.strip()
+            #     new_line = line_strip + "\n"
             else:
                 new_line = "|".join(split)
                 strip = new_line.strip()
                 new_line = strip + "\n"
-
+            #
             with open("new_line.txt", "a+") as f:
                 f.write(new_line)
 
@@ -365,4 +381,5 @@ if __name__ == '__main__':
     # test_config_with_ini()
     # test_latest_csv_pair_data_tuple_path()
     # print(",".join(list(("?" * len([1, 2, 3])))))
+    change_store_line_formate()
     pass

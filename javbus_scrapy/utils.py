@@ -445,6 +445,7 @@ def latest_csv_pair_data_tuple_path(data_store_abs_path, data_folder_name):
     result.sort(key=lambda x: x[0].split("_")[2], reverse=True)
     # 最新的一组
     result = [os.path.join(join, i) for i in result[0]]
+    assert len(result) == 2
     return result
 
 

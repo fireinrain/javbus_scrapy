@@ -13,7 +13,7 @@ import sqlite3
 import time
 
 from javbus_scrapy import settings, utils
-from javbus_scrapy.settings import DATA_STORE, ACTRESSES_PATH_NAME, STARINFO_PATH_NAME
+from javbus_scrapy.settings import DATA_STORE, ACTRESSES_PATH_NAME, STARINFO_PATH_NAME, STARITEMINFO_PATH_NAME
 
 
 class SqliteStorage:
@@ -55,7 +55,7 @@ class SqliteStorage:
               'id INTEGER PRIMARY KEY,' \
               'star_info_id INTEGER,' \
               'user_name TEXT,' \
-              'start_page_url TEXT,' \
+              'star_page_url TEXT,' \
               'latest_movie_url TEXT,' \
               'latest_movie_code TEXT,' \
               'latest_movie_publish_date TEXT,' \
@@ -63,7 +63,8 @@ class SqliteStorage:
               'head_photo_url TEXT,' \
               'censored TEXT)'
         sql = self.sql_fillter_process(sql, self.default_column)
-        self.do_create_table_if_not_exists(sql)
+        index_sql = 'create index if not exists index_actresses_movie_code on actresses(latest_movie_code)'
+        self.do_create_table_if_not_exists(sql, index_sql)
 
     # create table for javbus movie item intro
     def create_table_movie_intro(self):
@@ -73,8 +74,8 @@ class SqliteStorage:
               'movie_url TEXT,' \
               'movie_cover_url TEXT,' \
               'movie_title TEXT,' \
-              'movie_censored TEXT,' \
               'movie_has_magnet TEXT,' \
+              'movie_censored TEXT,' \
               'movie_resolutions TEXT,' \
               'movie_has_subtitle TEXT,' \
               'movie_subtitle_flag TEXT,' \
@@ -82,7 +83,24 @@ class SqliteStorage:
               'movie_publish_date TEXT' \
               ')'
         sql = self.sql_fillter_process(sql, self.default_column)
-        self.do_create_table_if_not_exists(sql)
+        index_sql = 'create index if not exists movie_intro_movie_code_index  on movie_intro(movie_code)'
+        self.do_create_table_if_not_exists(sql, index_sql)
+
+    def import_movie_intro_to_sqlite(self):
+        sql = 'insert into movie_intro(' \
+              'star_name,' \
+              'movie_url,' \
+              'movie_cover_url,' \
+              'movie_title,' \
+              'movie_has_magnet,' \
+              'movie_censored,' \
+              'movie_resolutions,' \
+              'movie_has_subtitle,' \
+              'movie_subtitle_flag,' \
+              'movie_code,' \
+              'movie_publish_date) values (?,?,?,?,?,?,?,?,?,?,?)'
+
+        self.import_data_csv_to_sqlite(insert_sql=sql, data_store_abs_path=STARITEMINFO_PATH_NAME)
 
     # create table for star info
     def create_table_star_info(self):
@@ -352,16 +370,19 @@ class SqliteStorage:
               'user_name,' \
               'star_page_url,' \
               'latest_movie_url,' \
+              'latest_movie_code,' \
               'latest_movie_publish_date,' \
               'latest_movie_name,' \
               'head_photo_url,' \
-              'censored) values(?,?,?,?,?,?,?,?)'
+              'censored) values(?,?,?,?,?,?,?,?,?)'
 
         sql = self.add_default_column_in_insert_sql(sql, self.default_column)
 
         actresses_files = utils.latest_csv_pair_data_tuple_path(DATA_STORE, ACTRESSES_PATH_NAME)
+        counts = 0
         for file in actresses_files:
             with open(file, 'r') as fi:
+                batch_list = []
                 while True:
                     readline = fi.readline()
                     if readline == "":
@@ -371,7 +392,40 @@ class SqliteStorage:
                     query_sql = f'select id from star_info where star_name="{name}"'
                     execute = self.db_cursor.execute(query_sql)
                     star_info_id = execute.fetchone()
-                    print(star_info_id)
+                    # print(star_info_id)
+                    if star_info_id is None:
+                        star_info_id = -1
+                    else:
+                        star_info_id = star_info_id[0]
+                    split.insert(0, star_info_id)
+                    split.append(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
+                    split.append(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
+                    tuple_t = tuple(split)
+                    batch_list.append(tuple_t)
+                    try:
+                        self.db_cursor.execute(sql, tuple_t)
+                        self.db.commit()
+                        counts += 1
+                    except Exception as e:
+                        self.db.rollback()
+                        print(tuple_t)
+                        print(f"insert exception: {e}")
+
+                #     if len(batch_list) >= 10000:
+                #         try:
+                #             self.db_cursor.executemany(sql, batch_list)
+                #             self.db.commit()
+                #         except Exception as e:
+                #             print(f"insert exception: {e}")
+                #             self.db.rollback()
+                #             batch_list = []
+                #             counts += 10000
+                #     else:
+                #         continue
+                # self.db_cursor.executemany(sql, batch_list)
+                # self.db.commit()
+                # counts += len(batch_list)
+        print(f"插入actresses数据: {counts}条")
 
     def import_star_info_to_sqlite(self):
         """
@@ -437,13 +491,15 @@ class SqliteStorage:
                     readline_split = readline.strip().split("|")
                     readline_split.append(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
                     readline_split.append(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
-                    # line_t = tuple(readline_split)
+                    line_t = tuple(readline_split)
                     # try:
-                    #     self.db_cursor.execute(insert_sql,line_t)
+                    #     self.db_cursor.execute(insert_sql, line_t)
                     #     self.db.commit()
                     # except Exception as e:
                     #     print(line_t)
                     #     print(f"insert error: {e}")
+                    #     self.db.rollback()
+
                     batch_list.append(tuple(readline_split))
                     if len(batch_list) >= batch_count:
                         try:
@@ -462,18 +518,13 @@ class SqliteStorage:
 
         print(f"成功插入{table_name}: {counts}条记录......")
 
-    def import_db_from_csv(self):
-        """
-        将csv数据导入到sqlite中
-        :return:
-        :rtype:
-        """
-        pass
-
 
 if __name__ == '__main__':
     storage = SqliteStorage("javbus.db")
-    storage.import_actresses_to_sqlite()
     # storage.init_db_tables()
     # storage.import_star_info_to_sqlite()
+
+    # storage.import_actresses_to_sqlite()
+    storage.import_movie_intro_to_sqlite()
+
     # storage.drop_all_table_with_index()
