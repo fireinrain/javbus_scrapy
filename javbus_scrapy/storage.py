@@ -13,7 +13,8 @@ import sqlite3
 import time
 
 from javbus_scrapy import settings, utils
-from javbus_scrapy.settings import DATA_STORE, ACTRESSES_PATH_NAME, STARINFO_PATH_NAME, STARITEMINFO_PATH_NAME
+from javbus_scrapy.settings import DATA_STORE, ACTRESSES_PATH_NAME, STARINFO_PATH_NAME, STARITEMINFO_PATH_NAME, \
+    TORRENT_DETAIL_PATH_NAME
 
 
 class SqliteStorage:
@@ -223,6 +224,63 @@ class SqliteStorage:
 
         self.do_create_table_if_not_exists(sql)
 
+    def import_torrent_data_to_sqlite(self):
+        sql = 'insert into torrent_detail(' \
+              'movie_code,' \
+              'torrent_name,' \
+              'torrent_resolution,' \
+              'torrent_subtitle,' \
+              'torrent_movie_size,' \
+              'torrent_share_date,' \
+              'torrent_url) values(?,?,?,?,?,?,?)'
+
+        sql = self.add_default_column_in_insert_sql(sql, self.default_column)
+
+        actresses_files = utils.latest_csv_pair_data_tuple_path(DATA_STORE, TORRENT_DETAIL_PATH_NAME)
+        counts = 0
+        for file in actresses_files:
+            with open(file, 'r') as fi:
+                batch_list = []
+                while True:
+                    readline = fi.readline()
+                    if readline == "":
+                        break
+                    split = readline.split("|")
+                    split_right = split[-1]
+                    split_split = split_right.split("#")
+                    for i in split_split:
+                        i_split = i.split(",")
+                        i_split.insert(0, split[0])
+                        i_split.append(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
+                        i_split.append(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
+                        tuple_t = tuple(i_split)
+                        batch_list.append(tuple_t)
+                        try:
+                            self.db_cursor.execute(sql, tuple_t)
+                            self.db.commit()
+                            counts += 1
+                        except Exception as e:
+                            self.db.rollback()
+                            print(tuple_t)
+                            print(f"insert exception: {e}")
+
+                #     if len(batch_list) >= 10000:
+                #         try:
+                #             self.db_cursor.executemany(sql, batch_list)
+                #             self.db.commit()
+                #         except Exception as e:
+                #             print(f"insert exception: {e}")
+                #             self.db.rollback()
+                #             batch_list = []
+                #             counts += 10000
+                #     else:
+                #         continue
+                # self.db_cursor.executemany(sql, batch_list)
+                # self.db.commit()
+                # counts += len(batch_list)
+        print(f"插入actresses数据: {counts}条")
+        pass
+
     # create table for movie torrent
     def create_table_movie_torrent(self):
         sql = 'create table if not exists movie_torrent(' \
@@ -241,11 +299,11 @@ class SqliteStorage:
               'id INTEGER PRIMARY KEY autoincrement,' \
               'movie_code TEXT,' \
               'torrent_name TEXT,' \
+              'torrent_url TEXT,' \
               'torrent_resolution TEXT,' \
               'torrent_subtitle TEXT,' \
               'torrent_movie_size TEXT,' \
-              'torrent_share_date TEXT,' \
-              'torrent_url TEXT)'
+              'torrent_share_date TEXT)'
         sql = self.sql_fillter_process(sql, self.default_column)
 
         index_sql = 'create index if not exists torrent_detail_movie_code_index on torrent_detail(movie_code)'
@@ -402,29 +460,29 @@ class SqliteStorage:
                     split.append(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
                     tuple_t = tuple(split)
                     batch_list.append(tuple_t)
-                    try:
-                        self.db_cursor.execute(sql, tuple_t)
-                        self.db.commit()
-                        counts += 1
-                    except Exception as e:
-                        self.db.rollback()
-                        print(tuple_t)
-                        print(f"insert exception: {e}")
+                    # try:
+                    #     self.db_cursor.execute(sql, tuple_t)
+                    #     self.db.commit()
+                    #     counts += 1
+                    # except Exception as e:
+                    #     self.db.rollback()
+                    #     print(tuple_t)
+                    #     print(f"insert exception: {e}")
 
-                #     if len(batch_list) >= 10000:
-                #         try:
-                #             self.db_cursor.executemany(sql, batch_list)
-                #             self.db.commit()
-                #         except Exception as e:
-                #             print(f"insert exception: {e}")
-                #             self.db.rollback()
-                #             batch_list = []
-                #             counts += 10000
-                #     else:
-                #         continue
-                # self.db_cursor.executemany(sql, batch_list)
-                # self.db.commit()
-                # counts += len(batch_list)
+                    if len(batch_list) >= 10000:
+                        try:
+                            self.db_cursor.executemany(sql, batch_list)
+                            self.db.commit()
+                        except Exception as e:
+                            print(f"insert exception: {e}")
+                            self.db.rollback()
+                            batch_list = []
+                            counts += 10000
+                    else:
+                        continue
+                self.db_cursor.executemany(sql, batch_list)
+                self.db.commit()
+                counts += len(batch_list)
         print(f"插入actresses数据: {counts}条")
 
     def import_star_info_to_sqlite(self):
@@ -525,6 +583,7 @@ if __name__ == '__main__':
     # storage.import_star_info_to_sqlite()
 
     # storage.import_actresses_to_sqlite()
-    storage.import_movie_intro_to_sqlite()
+    # storage.import_movie_intro_to_sqlite()
+    storage.import_torrent_data_to_sqlite()
 
     # storage.drop_all_table_with_index()

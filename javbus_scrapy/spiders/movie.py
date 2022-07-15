@@ -217,14 +217,14 @@ class MovieSpider(scrapy.Spider):
         # 该xpath 可以获取span中的text和 span后的text
         tags = process_later_nodes[min(process_later_nodes.keys())].xpath(
             './/text()').getall()
-        tags = [i.strip() for i in tags if i.strip() != ""]
-        tags_line = "|".join(tags)
+        tags = [i.strip() for i in tags if i.strip() != "" and i.strip() != "多選提交"]
+        tags_line = ",".join(tags)
         movie_detail_item['movie_tags'] = tags_line
 
         stars = process_later_nodes[max(process_later_nodes.keys())].xpath(
             './/text()').getall()
         stars = [i.strip() for i in stars if i.strip() != ""]
-        stars_line = "|".join(stars)
+        stars_line = ",".join(stars)
         movie_detail_item['movie_stars'] = stars_line
         sample_image_nodes = response.xpath('//*[@id="sample-waterfall"]/a')
         if sample_image_nodes is not None and len(sample_image_nodes) > 0:

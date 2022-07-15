@@ -365,6 +365,21 @@ def change_store_line_formate(file_abs_path: str = None):
                 f.write(new_line)
 
 
+def transform_file():
+    with open(
+            "/Users/sunrise/CodeGround/PycharmProjects/javbus_scrapy/data_store/torrentdetail/censored_torrent_detail_2022-07-14.csv",
+            "r") as file:
+        while True:
+            readline = file.readline()
+            if readline == "":
+                break
+            new_line = readline.replace("|", "#")
+            replace = new_line.replace(",", "|")
+            replace_replace = replace.replace("/", ",")
+            with open("new_line.txt", "a+") as f:
+                f.write(replace_replace)
+
+
 if __name__ == '__main__':
     # test_make_actresses_header()
     # test_fetch_page_with_cookie_all()
@@ -381,5 +396,6 @@ if __name__ == '__main__':
     # test_config_with_ini()
     # test_latest_csv_pair_data_tuple_path()
     # print(",".join(list(("?" * len([1, 2, 3])))))
-    change_store_line_formate()
+    # change_store_line_formate()
+    transform_file()
     pass
